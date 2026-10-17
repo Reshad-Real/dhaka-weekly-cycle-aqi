@@ -1,0 +1,68 @@
+{
+  "window": [
+    "2020-03-26",
+    "2020-05-30"
+  ],
+  "n_lockdown_days": 57,
+  "n_matched_control_days": 315,
+  "activity_cut_assumed": 0.8,
+  "observed_drop_pct": -22.79434602947783,
+  "observed_drop_p": 4.999750012499375e-05,
+  "observed_drop_matched_pct": -23.301155384353343,
+  "observed_drop_matched_p": 4.999750012499375e-05,
+  "reanalysis_drop_pct": 10.517217917537259,
+  "reanalysis_drop_p": 0.03129843507824609,
+  "predicted_drop_pct_at_central_share": -30.501669176860734,
+  "over_prediction_factor": 1.3381243373868121,
+  "implied_traffic_share_upper_bound": 0.2605153952845525,
+  "implied_traffic_share_upper_bound_matched": 0.26639962174293397,
+  "shares": [
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.5
+  ],
+  "forward": [
+    {
+      "traffic_share": 0.05,
+      "predicted_drop_pct": -4.59476734542084
+    },
+    {
+      "traffic_share": 0.1,
+      "predicted_drop_pct": -8.969129663802985
+    },
+    {
+      "traffic_share": 0.15,
+      "predicted_drop_pct": -13.275637566414533
+    },
+    {
+      "traffic_share": 0.2,
+      "predicted_drop_pct": -17.582145469026088
+    },
+    {
+      "traffic_share": 0.25,
+      "predicted_drop_pct": -21.888653371637638
+    },
+    {
+      "traffic_share": 0.3,
+      "predicted_drop_pct": -26.195161274249184
+    },
+    {
+      "traffic_share": 0.35,
+      "predicted_drop_pct": -30.501669176860734
+    },
+    {
+      "traffic_share": 0.4,
+      "predicted_drop_pct": -34.808177079472294
+    },
+    {
+      "traffic_share": 0.5,
+      "predicted_drop_pct": -43.42119288469537
+    }
+  ]
+}

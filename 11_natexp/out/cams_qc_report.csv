@@ -1,0 +1,20 @@
+rule,n
+Q0 unparseable timestamp dropped,0
+Q4 duplicates removed,9013
+Q1 range PM25,175
+Q1 range PM10,510
+Q1 range NO2,3834
+Q1 range NOX,518
+Q1 range NO,653
+Q1 range SO2,85
+Q1 range O3,433
+Q1 range CO,280
+Q2 stuck runs PM25,5914
+Q2 stuck runs PM10,3977
+Q2 stuck runs NO2,8609
+Q2 stuck runs NOX,4953
+Q2 stuck runs NO,7459
+Q2 stuck runs SO2,5358
+Q2 stuck runs O3,10521
+Q2 stuck runs CO,11377
+Q3 PM2.5 > 1.1 PM10,27719
