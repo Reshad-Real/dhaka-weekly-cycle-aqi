@@ -608,10 +608,76 @@ def strikes():
               ["Calendar", "Outcome", "Days", "Change (\\%)"], rows, size=r"\footnotesize")
 
 
+RUNLAB = {"published": "Published", "B2000": "2,000 resamples", "seed2": "Seed 2", "seed3": "Seed 3",
+          "seed4": "Seed 4", "seed5": "Seed 5"}
+
+
+def hour_runs(hours):
+    """[16, 21, 22, 23] -> '16, 21--23'; [] -> 'none'."""
+    runs = []
+    for h in sorted(hours):
+        if runs and h == runs[-1][1] + 1:
+            runs[-1][1] = h
+        else:
+            runs.append([h, h])
+    return ", ".join("%02d" % a if a == b else "%02d--%02d" % (a, b) for a, b in runs) or "none"
+
+
+def stability_weekly():
+    W = pd.read_csv(os.path.join(OUT, "boot_stability_weekly.csv"))
+    rows = []
+    for reg in ("Dhaka", "national"):
+        for run in RUNLAB:
+            g = W[(W.region == reg) & (W.run == run)].set_index("block")
+            r0 = g.iloc[0]
+            row = [reg.replace("national", "National"), RUNLAB[run], "{:,}".format(int(r0.B))]
+            for b in ("afternoon 12-17", "evening 18-23", "daily"):
+                q = g.loc[b, "q_bh"]
+                row += [ci(g.loc[b, "pct"], g.loc[b, "lo_pct"], g.loc[b, "hi_pct"]),
+                        "$<$0.001" if q < 0.001 else "%.3f" % q]
+            rows.append(row)
+    seeds = W.groupby("run", sort=False).seed.first()
+    longtable("supp_stability_weekly.tex", "L{1.2cm} L{2.2cm} C{0.7cm}" + " C{2.5cm} C{0.9cm}" * 3,
+              r"Monte Carlo stability of the joint-date bootstrap: Friday PM$_{2.5}$ contrasts (percent, 95\% "
+              r"percentile interval) and Benjamini--Hochberg $q$-values, recomputed with the published seed and "
+              r"400 resamples (which reproduce the published values), with 2,000 resamples, and with four further "
+              r"seeds of 400. Every resample gave a pooled estimate. Each $q$-value uses the run's $p$-values for "
+              r"the ten Friday PM$_{2.5}$ tests and the published ones for the other 50 tests of the family. "
+              r"Seeds: " + "; ".join("%s %d" % (RUNLAB[k].lower(), v) for k, v in seeds.items()) + ".",
+              "tab:s-stability-weekly",
+              ["Region", "Run", "$B$", "Afternoon", "$q$", "Evening", "$q$", "Daily", "$q$"], rows,
+              size=r"\scriptsize\setlength{\tabcolsep}{3pt}")
+
+
+def stability_hourly():
+    T = pd.read_csv(os.path.join(OUT, "boot_stability_hourly.csv"))
+    curves = [("Dhaka", "PM25"), ("national", "PM25"), ("Dhaka", "NOX"), ("national", "NOX"),
+              ("Dhaka", "CO"), ("national", "CO"), ("Dhaka", "NOX_CO"), ("national", "NOX_CO")]
+    lab = {"PM25": "PM$_{2.5}$", "NOX": "NO$_x$", "CO": "CO", "NOX_CO": "NO$_x$/CO"}
+    rows = []
+    for reg, y in curves:
+        for run in RUNLAB:
+            g = T[(T.region == reg) & (T.tracer == y) & (T.run == run)]
+            if g.empty:
+                continue
+            out = {d: hour_runs(g[(g.day == d) & g.sim_excludes_zero].hour) for d in ("Thu", "Fri", "Sat")}
+            rows.append([reg.replace("national", "National") + " " + lab[y], RUNLAB[run],
+                         "%.2f" % g.crit.iloc[0], out["Thu"], out["Fri"], out["Sat"]])
+    seeds = T.groupby("run", sort=False).seed.first()
+    longtable("supp_stability_hourly.tex", "L{2.6cm} L{2.4cm} C{0.9cm} L{2.0cm} L{3.6cm} L{2.0cm}",
+              r"Monte Carlo stability of the simultaneous 95\% bands for the 72-hour curves (Thursday 00~h to "
+              r"Saturday 23~h): the critical value $c$ and the clock hours at which the band excludes zero, for the "
+              r"published seed and 400 resamples (which reproduce the published bands), 2,000 resamples, and four "
+              r"further seeds of 400. Every resample gave a pooled estimate at every hour. Seeds: "
+              + "; ".join("%s %d" % (RUNLAB[k].lower(), v) for k, v in seeds.items()) + ".",
+              "tab:s-stability-hourly", ["Curve", "Run", "$c$", "Thursday", "Friday", "Saturday"], rows,
+              size=r"\scriptsize")
+
+
 if __name__ == "__main__":
     for f in (qc, coverage, screening, station, robust, vent, eid_event, mobility, activity,
               qc_station, coverage_year, missingness, flatline, bootdays, bh, blocklen, eid_checks,
               lockdown_checks, reconstruct, decompose, mechanism, gapfill, aqi_checks, aqi_annual, aqi_cap,
-              clock, gas_screens, strikes):
+              clock, gas_screens, strikes, stability_weekly, stability_hourly):
         f()
     print("wrote", sorted(x for x in os.listdir(TAB) if x.startswith("supp_")))

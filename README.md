@@ -8,7 +8,7 @@ Data and code for the manuscript
 > submission to Urban Climate, 2026 (an earlier draft was titled "Dhaka's working week does
 > not reach the night").
 >
-> Release v2.2 is the version the manuscript describes; v2.1 has the same code and results.
+> Release v2.3 is the version the manuscript describes.
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC
 University, Dhaka, Bangladesh. Correspondence: Mirza Rasheduzzaman,
@@ -25,6 +25,7 @@ The folders mirror the project's own layout, so every script runs from a clone u
 | `11_natexp/data/cams_hourly_qc.csv.gz` | The same after the documented quality control (`cams_qc.py`). |
 | `11_natexp/data/station_locations.csv` | Station hosts and positions from the World Air Quality Index listing; the US Embassy from OpenStreetMap Nominatim. |
 | `11_natexp/out/` | Every result file (CSV, JSON, the bootstrap draws as CSV.GZ) and figure (PNG) the manuscript and supplement draw on. |
+| `11_natexp/paper/tables/supp_*.tex` | Every supplementary table, as written by `make_supp_tables.py` from the result files. |
 | `02_data/raw/meteo_dhaka_hourly_filled.csv` | ERA5 hourly meteorology requested at 23.8103 N, 90.4125 E from the Open-Meteo archive API (`models=era5`, `timezone=Asia/Dhaka`, retrieved 17 October 2026), which returns the nearest 0.25 degree ERA5 cell (23.75 N, 90.50 E) without interpolation; local time, with the 4,368 gap-filled boundary-layer hours flagged in `blh_filled`. |
 | `02_data/raw/meteo_dhaka_hourly.csv` | The same ERA5 download before the gap fill (the boundary-layer gap is empty here); used for the gap-fill error analysis. |
 | `02_data/gapfill.py`, `06_results/metrics/blh_gapfill_cv.csv` | The boundary-layer gap fill and its blocked cross-validation (8 held-out 181-day blocks). |
@@ -36,6 +37,20 @@ The folders mirror the project's own layout, so every script runs from a clone u
 | `Traffic/data_availability/01_dose_field/dose_field_0p05deg.csv` | OpenStreetMap road length per 0.05 degree cell (Fig. 1a). |
 | `Traffic/gates/data/bgd_ADM1.geojson`, `bgd_ADM2.geojson` | geoBoundaries administrative boundaries (Fig. 1). |
 | `MANIFEST.csv` | Every file with its size and SHA-256 digest. |
+
+## Where the main results come from
+
+| Result | Script (`11_natexp/code/`) | Result files (`11_natexp/out/`) |
+|---|---|---|
+| Weekly contrasts by diurnal block, joint-date bootstrap intervals, Benjamini-Hochberg q-values, block-length and sensitivity runs | `robustness.py` | `robust_bootstrap*.csv`, `robust_bh_bootstrap.csv`, `robust_pooled.csv` |
+| Hour-by-hour profiles, with pointwise intervals and simultaneous bands for each 72-hour curve | `hourly_profiles.py`, `hourly_boot.py` | `hourly_profiles*.csv`, `hourly_boot.csv` |
+| Reconstruction of the daily change on the log and arithmetic (PPML) scales, and its step-by-step decomposition | `reconstruct.py` | `reconstruct.csv`, `decompose.csv` |
+| Monte Carlo stability of both bootstraps (2,000 resamples; four further seeds) | `boot_stability.py` | `boot_stability_weekly.csv`, `boot_stability_hourly.csv` |
+| Eid and lockdown checks, event bootstrap and placebo-based sensitivity intervals | `events_checks.py`, `events_tracers.py` | `eid_checks.csv`, `lockdown_checks.csv`, `events_dependence.csv`, `events_tracers.csv` |
+| Boundary-layer interaction tests | `mechanism.py` | `mechanism.csv` |
+| AQI sub-index, scenarios and the cap at 500 | `aqi_scenarios.py`, `aqi_cap.py` | `aqi_scenarios.csv`, `aqi_cap.csv` |
+
+The random seeds of every bootstrap are fixed in the scripts.
 
 ## Inputs not redistributed
 
@@ -61,9 +76,11 @@ python -I 11_natexp/code/run_all.py
 ```
 
 `run_all.py` rewrites every file in `11_natexp/out/` and logs each step to
-`11_natexp/out/run_all.log`; the full run takes about an hour on a 20-thread laptop. Rerun
-from a fresh copy of this release, 62 of the 63 result files were byte-identical and the 63rd,
-`robust_bootstrap_draws.csv.gz`, differed only in its gzip header timestamp.
+`11_natexp/out/run_all.log`; the full run takes about 1 hour 40 minutes on a 20-thread
+laptop. Rerun from a fresh copy of this release, 64 of the 65 result files were
+byte-identical and the 65th, `robust_bootstrap_draws.csv.gz`, differed only in its gzip
+header timestamp; `make_supp_tables.py` then rewrote all 30 supplementary tables
+byte-identically.
 `11_natexp/code/verify_claims.py` re-derives every number in
 the manuscript from `11_natexp/out/`; it needs the manuscript source, which is not part of
 this deposit until publication.

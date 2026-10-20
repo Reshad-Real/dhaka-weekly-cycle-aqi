@@ -12,8 +12,8 @@
   W4  Ventilation dependence: within each diurnal block, the pooled Friday effect by
       tercile of that block's own ventilation coefficient.
 
-Writes out/blh_by_hour.csv, out/pm_share_by_hour.csv, out/weighting_check.csv,
-out/friday_by_block_vc.csv and out/fig4_weighting.png.
+Writes out/blh_by_hour.csv, out/pm_share_by_hour.csv, out/weighting_check.csv and
+out/friday_by_block_vc.csv; Fig. 4 is drawn from them by fig4_weighting.py.
 Usage: python -I blh_weighting.py <FYDP_D root>
 """
 import os
@@ -135,66 +135,6 @@ def main(root):
     print("\nFriday PM2.5 effect by same-block ventilation tercile (pooled %)")
     print(W4.pivot_table(index=["region", "block"], columns="vc_tercile", values="pct")[
         ["low", "mid", "high"]].round(1).to_string())
-
-    # ---------------------------------------------------------------- figure
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    plt.rcParams.update({"font.size": 8, "axes.edgecolor": "#52514e", "axes.labelcolor": "#0b0b0b",
-                         "xtick.color": "#52514e", "ytick.color": "#52514e"})
-    fig, ax = plt.subplots(1, 3, figsize=(11, 3.3), gridspec_kw={"width_ratios": [1, 1, 0.8]})
-    for a in ax[:2]:
-        for x0, x1 in ((12, 17.99), (18, 23.99)):
-            a.axvspan(x0, x1, color="#e9e8e4", lw=0, zorder=0)
-    ends = {}
-    for s_ in SORDER:
-        q = W1[W1.season == s_]
-        ax[0].plot(q.hour, q.blh_median, color=SCOL[s_], lw=2, label=s_)
-        ends[s_] = q.blh_median.iloc[-1]
-        q = W2[W2.season == s_]
-        ax[1].plot(q.hour, 100 * q.share, color=SCOL[s_], lw=2)
-    # direct labels at the line ends, nudged apart so none collide
-    placed = []
-    for s_, yv in sorted(ends.items(), key=lambda kv: kv[1]):
-        yv = max([yv] + [p + 75 for p in placed])
-        placed.append(yv)
-        ax[0].text(23.4, yv, s_, color="#0b0b0b", fontsize=7, va="center")
-    fig.legend(*ax[0].get_legend_handles_labels(), loc="upper center", ncol=4, frameon=False,
-               fontsize=8, bbox_to_anchor=(0.38, 1.02))
-    ax[0].set_xlim(0, 27)
-    ax[0].set_xticks(range(0, 24, 3))
-    ax[0].set_xlabel("Local hour")
-    ax[0].set_ylabel("ERA5 boundary-layer height, median (m)")
-    ax[0].set_title("(a) Mixing depth", loc="left", fontsize=9)
-    ax[1].axhline(100 / 24, color="#52514e", lw=0.8, ls=":")
-    ax[1].set_xticks(range(0, 24, 3))
-    ax[1].set_xlabel("Local hour")
-    ax[1].set_ylabel("Share of the daily PM2.5 mean (%)")
-    ax[1].set_title("(b) Where the daily mean comes from", loc="left", fontsize=9)
-    ax[1].text(15, ax[1].get_ylim()[1] * 0.98, "hours Fridays\nreduce", ha="center", va="top",
-               fontsize=7, color="#52514e")
-    for a in ax[:2]:
-        a.spines[["top", "right"]].set_visible(False)
-        a.grid(axis="y", color="#e9e8e4", lw=0.6)
-    # (c) predicted vs observed daily effect
-    q = W3[W3.region == "Dhaka"].set_index("variant").reindex(["main", "dry", "wet"])
-    y = np.arange(len(q))
-    ax[2].errorbar(q.observed_daily_pct, y, xerr=[q.observed_daily_pct - q.observed_lo,
-                                                  q.observed_hi - q.observed_daily_pct],
-                   fmt="o", color="#2a78d6", ms=6, capsize=2, label="observed daily")
-    ax[2].scatter(q.predicted_daily_pct, y + 0.18, marker="D", s=30, color="#eb6834",
-                  label="predicted from blocks")
-    ax[2].axvline(0, color="#52514e", lw=0.8)
-    ax[2].set_yticks(y)
-    ax[2].set_yticklabels(["all year", "dry (Nov-Apr)", "wet (May-Oct)"])
-    ax[2].invert_yaxis()
-    ax[2].set_xlabel("Friday effect on daily PM2.5 (%)")
-    ax[2].set_title("(c) Accounting check", loc="left", fontsize=9)
-    ax[2].legend(frameon=False, fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
-    ax[2].spines[["top", "right"]].set_visible(False)
-    fig.tight_layout(rect=(0, 0, 1, 0.93))
-    fig.savefig(os.path.join(OUT, "fig4_weighting.png"), dpi=220)
-    print("\nwrote fig4_weighting.png")
 
 
 if __name__ == "__main__":

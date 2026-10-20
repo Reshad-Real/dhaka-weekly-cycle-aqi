@@ -110,6 +110,38 @@ class R:
         self.miss = csv("missingness_dow.csv")
         self.clock = csv("clock_check.csv").set_index("station")
         self.eev = csv("eid_by_event.csv")
+        self.stw = csv("boot_stability_weekly.csv")
+        self.sth = csv("boot_stability_hourly.csv")
+
+    # -- Monte Carlo stability of the bootstrap (boot_stability.py)
+    STAB_BLOCKS = ("afternoon 12-17", "evening 18-23", "daily")
+
+    def stab_range(self, region, block, field):
+        """(min, max) of a Friday PM2.5 field over the six runs."""
+        q = self.stw[(self.stw.region == region) & (self.stw.block == block)][field]
+        assert len(q) == 6, (region, block)
+        return float(q.min()), float(q.max())
+
+    def stab_maxdev(self, runs=None):
+        """Largest move of an interval endpoint from the published run, in percentage points,
+        over both regions and the afternoon, evening and daily Friday PM2.5 intervals."""
+        W = self.stw[self.stw.block.isin(self.STAB_BLOCKS)]
+        P = W[W.run == "published"].set_index(["region", "block"])
+        W = W[W.run != "published"] if runs is None else W[W.run.isin(runs)]
+        return max(max(abs(r.lo_pct - P.loc[(r.region, r.block), "lo_pct"]),
+                       abs(r.hi_pct - P.loc[(r.region, r.block), "hi_pct"])) for r in W.itertuples())
+
+    def stab_crit(self):
+        """(min, max) of the simultaneous-band critical values over all curves and runs."""
+        c = self.sth.groupby(["run", "region", "tracer"]).crit.first()
+        return float(c.min()), float(c.max())
+
+    def stab_common_hours(self, region, tracer, day="Fri"):
+        """Clock hours at which the simultaneous band excludes zero in every one of the six runs."""
+        q = self.sth[(self.sth.region == region) & (self.sth.tracer == tracer) & (self.sth.day == day)]
+        sets = [set(g[g.sim_excludes_zero].hour) for _, g in q.groupby("run")]
+        assert len(sets) == 6, (region, tracer, day)
+        return sorted(int(h) for h in set.intersection(*sets))
 
     # -- helpers
     def mobility(self, shock_prefix, col):
@@ -336,6 +368,16 @@ def claims(r):
 
     # ---------------------------------------------------------------- methods
     add("BH family size", "procedure over one family of", [len(r.bh)])
+    add("Monte Carlo error", "Monte Carlo error is small for the block contrasts",
+        [r.stab_maxdev(["B2000"]), r.stab_maxdev(["seed2", "seed3", "seed4", "seed5"]),
+         *r.stab_range("Dhaka", AFT, "q_bh"), *r.stab_range("Dhaka", EVE, "q_bh")])
+    # the national PM2.5 and NOx band hours named in the Results must hold in every run
+    nat_pm_common = r.stab_common_hours("national", PM)
+    nat_nox_common = r.stab_common_hours("national", "NOX")
+    assert set(r.hours("national", PM, "Fri")) <= set(nat_pm_common), "national PM2.5 band hours vary"
+    assert set(r.hours("national", "NOX", "Fri")) <= set(nat_nox_common), "national NOx band hours vary"
+    add("Monte Carlo bands", "Across the Monte Carlo runs the critical",
+        [*r.stab_crit(), r.stab_common_hours("Dhaka", PM)[0]])
     add("Eid events resampled", "the main interval resamples the", [int(r.eid("event_boot", field="n_events"))])
     cams_dom = 100 * r.dom[r.dom.source.str.startswith("CAMS")].share_other_higher
     add("PM10 dominance", "exceeds it at the CAMS stations on", [("range", cams_dom.min(), cams_dom.max())])
@@ -402,6 +444,7 @@ def claims(r):
          A(r.boot("Dhaka", "NOX", NIGHT)), r.boot("Dhaka", "NOX", NIGHT, field="lo_pct"),
          r.boot("Dhaka", "NOX", NIGHT, field="hi_pct"),
          nox_night[0], dnox_night[0], dnox_night[-1],
+         [h for h in r.stab_common_hours("Dhaka", "NOX") if h < 6][0],
          A(r.boot("national", "NOX", NIGHT, "Sat")), r.boot("national", "NOX", NIGHT, "Sat", "lo_pct"),
          r.boot("national", "NOX", NIGHT, "Sat", "hi_pct"),
          A(r.boot("Dhaka", "NOX", NIGHT, "Sat")), r.boot("Dhaka", "NOX", NIGHT, "Sat", "lo_pct"),
@@ -420,7 +463,8 @@ def claims(r):
     dpm_sim = r.hours("Dhaka", PM, "Fri")
     add("Dhaka hourly and blocks", "midnight to late morning (",
         [fri_am.min(), fri_am.max(), A(fri_pm.max()), A(fri_pm.min()),
-         [h for h in r.hours("Dhaka", PM, "Fri", "pw") if h >= 12][0], dpm_sim[0], dpm_sim[1], dpm_sim[-1]]
+         [h for h in r.hours("Dhaka", PM, "Fri", "pw") if h >= 12][0], dpm_sim[0], dpm_sim[1], dpm_sim[-1],
+         r.stab_common_hours("Dhaka", PM)[0]]
         + [A(r.boot("Dhaka", PM, AFT)), r.boot("Dhaka", PM, AFT, field="lo_pct"), r.boot("Dhaka", PM, AFT, field="hi_pct"),
            A(r.boot("Dhaka", PM, EVE)), r.boot("Dhaka", PM, EVE, field="lo_pct"), r.boot("Dhaka", PM, EVE, field="hi_pct"),
            paft[0], paft[1], peve[0], peve[1], len(r.bh), r.q_bh("Dhaka", PM, EVE), r.q_bh("Dhaka", PM, AFT),
@@ -604,7 +648,7 @@ def claims(r):
         [r.eid("main", field="I2"), r.lk("main", field="I2")])
 
     # ---------------------------------------------------------------- conclusions
-    add("conclusions 1", "\\pmtf{} follows from midday, by",
+    add("conclusions 1", "and \\pmtf{} from midday, by",
         [A(r.boot("Dhaka", PM, AFT)), A(r.boot("Dhaka", PM, EVE)), A(r.boot("national", PM, EVE))])
     add("conclusions 2", "In Dhaka the daily mean changes by",
         [A(r.boot("Dhaka", PM, DAY)), A(r.bootaqi("Dhaka", "Fri"))])

@@ -1,0 +1,47 @@
+\begingroup\footnotesize
+\begin{longtable}{L{2.0cm} L{3.4cm} L{1.5cm} C{0.6cm} C{3.3cm} C{2.4cm}}
+\caption{Daily-mean response to each shock in the designs of Section~3 of the main text: TROPOMI NO$_2$ over the domain (days with at least half of the domain observed, and every observed day), and PM$_{2.5}$, NO$_x$ and CO pooled over screened stations; percent with 95\% interval, first treating stations as independent (Newey--West, random effects), then dependence-aware: the joint-date bootstrap for Friday and Saturday, the event bootstrap over the 11 usable events for Eid, and for the lockdown the interval widened by the spread of four pseudo-lockdowns. TROPOMI is one series, so its weekly and strike-day intervals are Newey--West only, as are all strike-day intervals. Gas analyzers are not compared across years, so no gas lockdown estimate is given. Nor is a national PM$_{2.5}$ lockdown estimate: the design reads March--May 2020 against each station's own 2020 level, the national stations have no reference monitor against which a level shift could be detected, and the two with 2020 data, both in Chattogram, show one (at Agrabad, January--February PM$_{2.5}$ averaged 125.7\,$\mu$g\,m$^{-3}$ in 2019 and 68.2 in 2020, while at BARC in Dhaka it rose from 142.2 to 163.9).}\label{tab:s-activity}\\
+\toprule
+\textbf{Shock} & \textbf{Outcome} & \textbf{Region} & \textbf{$k$} & \textbf{Change (\%)} & \textbf{Dependence-aware} \\
+\midrule\endfirsthead
+\toprule
+\textbf{Shock} & \textbf{Outcome} & \textbf{Region} & \textbf{$k$} & \textbf{Change (\%)} & \textbf{Dependence-aware} \\
+\midrule\endhead
+\bottomrule\endfoot
+Friday & CO & Dhaka & 4 & $-$1.0 {\scriptsize[$-$5.8, $+$4.0]} & [$-$3.4, $+$0.8] \\
+Friday & CO & National & 8 & $-$2.9 {\scriptsize[$-$6.8, $+$1.1]} & [$-$5.3, $-$0.6] \\
+Friday & NO$_x$ & Dhaka & 3 & $-$1.9 {\scriptsize[$-$5.6, $+$2.0]} & [$-$5.1, $+$2.1] \\
+Friday & NO$_x$ & National & 7 & $-$4.0 {\scriptsize[$-$6.7, $-$1.3]} & [$-$6.7, $-$1.1] \\
+Friday & PM$_{2.5}$ & Dhaka & 7 & $-$1.0 {\scriptsize[$-$2.9, $+$1.0]} & [$-$3.9, $+$1.7] \\
+Friday & PM$_{2.5}$ & National & 9 & $-$3.7 {\scriptsize[$-$5.9, $-$1.4]} & [$-$6.5, $-$1.0] \\
+Friday & TROPOMI NO$_2$ & domain & 1 & $-$11.7 {\scriptsize[$-$15.6, $-$7.8]} & -- \\
+Friday & TROPOMI NO$_2$, every observed day & domain & 1 & $-$11.4 {\scriptsize[$-$15.0, $-$7.7]} & -- \\
+Saturday & CO & Dhaka & 4 & $-$0.7 {\scriptsize[$-$3.9, $+$2.5]} & [$-$2.9, $+$1.7] \\
+Saturday & CO & National & 8 & $-$2.4 {\scriptsize[$-$5.2, $+$0.5]} & [$-$4.0, $-$0.4] \\
+Saturday & NO$_x$ & Dhaka & 3 & $-$5.6 {\scriptsize[$-$11.0, $+$0.1]} & [$-$9.3, $-$2.4] \\
+Saturday & NO$_x$ & National & 7 & $-$1.8 {\scriptsize[$-$5.1, $+$1.6]} & [$-$4.5, $+$0.8] \\
+Saturday & PM$_{2.5}$ & Dhaka & 7 & $-$3.1 {\scriptsize[$-$4.9, $-$1.3]} & [$-$5.4, $-$0.6] \\
+Saturday & PM$_{2.5}$ & National & 9 & $-$2.9 {\scriptsize[$-$5.1, $-$0.6]} & [$-$5.6, $-$0.1] \\
+Saturday & TROPOMI NO$_2$ & domain & 1 & $-$7.0 {\scriptsize[$-$11.2, $-$2.5]} & -- \\
+Saturday & TROPOMI NO$_2$, every observed day & domain & 1 & $-$7.2 {\scriptsize[$-$11.2, $-$3.0]} & -- \\
+Eid & CO & Dhaka & 3 & $-$3.4 {\scriptsize[$-$12.8, $+$7.0]} & [$-$14.8, $+$3.9] \\
+Eid & CO & National & 7 & $-$0.0 {\scriptsize[$-$3.8, $+$3.9]} & [$-$7.0, $+$5.3] \\
+Eid & NO$_x$ & Dhaka & 3 & $-$22.9 {\scriptsize[$-$31.8, $-$13.0]} & [$-$34.3, $-$10.2] \\
+Eid & NO$_x$ & National & 7 & $-$15.3 {\scriptsize[$-$24.5, $-$5.1]} & [$-$18.4, $-$5.0] \\
+Eid & PM$_{2.5}$ & Dhaka & 6 & $-$22.6 {\scriptsize[$-$31.9, $-$12.2]} & [$-$32.0, $-$15.0] \\
+Eid & PM$_{2.5}$ & National & 9 & $-$9.9 {\scriptsize[$-$15.7, $-$3.8]} & [$-$18.7, $+$3.6] \\
+Eid & TROPOMI NO$_2$ & domain & 1 & $-$43.6 {\scriptsize[$-$51.4, $-$34.5]} & [$-$53.3, $-$30.5] \\
+Eid & TROPOMI NO$_2$, every observed day & domain & 1 & $-$30.6 {\scriptsize[$-$39.4, $-$20.4]} & -- \\
+Lockdown & PM$_{2.5}$ & Dhaka & 4 & $-$25.8 {\scriptsize[$-$39.9, $-$8.4]} & [$-$42.2, $-$4.7] \\
+Lockdown & TROPOMI NO$_2$ & domain & 1 & $-$45.7 {\scriptsize[$-$54.1, $-$35.8]} & [$-$61.6, $-$23.2] \\
+Lockdown & TROPOMI NO$_2$, every observed day & domain & 1 & $-$44.7 {\scriptsize[$-$52.3, $-$35.7]} & -- \\
+Strike days & CO & Dhaka & 4 & $-$0.5 {\scriptsize[$-$5.7, $+$5.0]} & -- \\
+Strike days & CO & National & 8 & $-$0.6 {\scriptsize[$-$4.4, $+$3.2]} & -- \\
+Strike days & NO$_x$ & Dhaka & 3 & $+$3.3 {\scriptsize[$-$3.4, $+$10.5]} & -- \\
+Strike days & NO$_x$ & National & 7 & $-$0.2 {\scriptsize[$-$5.1, $+$4.9]} & -- \\
+Strike days & PM$_{2.5}$ & Dhaka & 7 & $-$3.4 {\scriptsize[$-$7.0, $+$0.4]} & -- \\
+Strike days & PM$_{2.5}$ & National & 9 & $-$5.0 {\scriptsize[$-$10.4, $+$0.7]} & -- \\
+Strike days & TROPOMI NO$_2$ & domain & 1 & $-$6.1 {\scriptsize[$-$13.0, $+$1.3]} & -- \\
+Strike days & TROPOMI NO$_2$, every observed day & domain & 1 & $+$1.4 {\scriptsize[$-$6.5, $+$10.0]} & -- \\
+\end{longtable}
+\endgroup

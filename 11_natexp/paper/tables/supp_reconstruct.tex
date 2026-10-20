@@ -1,0 +1,28 @@
+\begingroup\scriptsize
+\begin{longtable}{L{1.4cm} L{1.5cm} L{1.5cm} C{0.4cm} C{1.0cm} C{2.4cm} C{2.4cm} C{2.4cm}}
+\caption{The daily Friday change in the equal-block mean PM$_{2.5}$ (the mean of the four block means) reconstructed from the four block contrasts, against the change estimated directly for the same daily outcome on the same dates, percent, and their difference (percentage points); 95\% intervals from the joint-date bootstrap carried through every step. Log: block and daily models fitted to log concentrations; the reconstruction divides each Friday's observed block means by $e^{\beta_b}$, a residual-preserving multiplicative counterfactual, and the direct value $e^{\beta}-1$ is a geometric-mean contrast that, under the same construction, is also the ratio of the Friday total to its counterfactual. Arithmetic: the same designs fitted by Poisson pseudo-maximum likelihood to concentrations, so $e^{\beta}$ is a ratio of conditional arithmetic means and the fitted Friday total equals the observed one; block and daily models then estimate the same ratio of Friday to working-day totals under different mean models. Complete days: dates with all 24 hours valid, on which the equal-block mean is the mean of all hours.}\label{tab:s-reconstruct}\\
+\toprule
+\textbf{Region} & \textbf{Sample} & \textbf{Scale} & \textbf{$k$} & \textbf{Fridays} & \textbf{Reconstructed} & \textbf{Direct} & \textbf{Difference} \\
+\midrule\endfirsthead
+\toprule
+\textbf{Region} & \textbf{Sample} & \textbf{Scale} & \textbf{$k$} & \textbf{Fridays} & \textbf{Reconstructed} & \textbf{Direct} & \textbf{Difference} \\
+\midrule\endhead
+\bottomrule\endfoot
+Dhaka & All & Log & 7 & 1165 & $-$1.7 {\scriptsize[$-$4.1, $+$1.1]} & $-$1.5 {\scriptsize[$-$4.3, $+$1.5]} & $-$0.2 {\scriptsize[$-$1.2, $+$0.8]} \\
+Dhaka & All & Arithmetic & 7 & 1165 & $-$2.2 {\scriptsize[$-$5.5, $+$1.2]} & $-$1.6 {\scriptsize[$-$5.1, $+$2.0]} & $-$0.6 {\scriptsize[$-$1.6, $+$0.6]} \\
+Dhaka & Dry & Log & 6 & 571 & $-$2.0 {\scriptsize[$-$5.7, $+$2.2]} & $-$0.5 {\scriptsize[$-$5.0, $+$4.0]} & $-$1.5 {\scriptsize[$-$3.0, $+$0.3]} \\
+Dhaka & Dry & Arithmetic & 6 & 571 & $-$1.5 {\scriptsize[$-$5.3, $+$2.6]} & $-$0.4 {\scriptsize[$-$4.6, $+$3.9]} & $-$1.1 {\scriptsize[$-$2.3, $+$0.3]} \\
+Dhaka & Wet & Log & 7 & 569 & $-$1.3 {\scriptsize[$-$5.1, $+$2.3]} & $-$1.6 {\scriptsize[$-$5.6, $+$2.5]} & $+$0.3 {\scriptsize[$-$1.4, $+$1.7]} \\
+Dhaka & Wet & Arithmetic & 7 & 569 & $-$3.4 {\scriptsize[$-$7.2, $+$0.6]} & $-$3.3 {\scriptsize[$-$7.7, $+$1.9]} & $-$0.1 {\scriptsize[$-$2.5, $+$1.4]} \\
+National & All & Log & 9 & 999 & $-$2.4 {\scriptsize[$-$5.2, $+$0.3]} & $-$2.5 {\scriptsize[$-$5.4, $+$0.4]} & $+$0.1 {\scriptsize[$-$1.0, $+$1.1]} \\
+National & All & Arithmetic & 9 & 999 & $-$2.0 {\scriptsize[$-$4.8, $+$0.5]} & $-$1.8 {\scriptsize[$-$4.8, $+$0.8]} & $-$0.3 {\scriptsize[$-$1.3, $+$1.0]} \\
+National & Dry & Log & 9 & 608 & $-$2.7 {\scriptsize[$-$6.3, $+$1.0]} & $-$2.0 {\scriptsize[$-$6.0, $+$1.6]} & $-$0.7 {\scriptsize[$-$1.9, $+$0.7]} \\
+National & Dry & Arithmetic & 9 & 608 & $-$1.6 {\scriptsize[$-$5.0, $+$1.2]} & $-$1.2 {\scriptsize[$-$5.2, $+$1.7]} & $-$0.4 {\scriptsize[$-$1.7, $+$1.0]} \\
+National & Wet & Log & 8 & 359 & $-$2.4 {\scriptsize[$-$6.2, $+$1.8]} & $-$4.2 {\scriptsize[$-$8.1, $+$1.1]} & $+$1.8 {\scriptsize[$-$0.1, $+$3.3]} \\
+National & Wet & Arithmetic & 8 & 359 & $-$4.1 {\scriptsize[$-$7.7, $+$0.9]} & $-$5.2 {\scriptsize[$-$9.1, $+$1.2]} & $+$1.1 {\scriptsize[$-$0.9, $+$3.3]} \\
+Dhaka & Complete days & Log & 7 & 831 & $-$2.0 {\scriptsize[$-$5.0, $+$0.5]} & $-$1.7 {\scriptsize[$-$4.7, $+$1.1]} & $-$0.3 {\scriptsize[$-$1.5, $+$0.7]} \\
+Dhaka & Complete days & Arithmetic & 7 & 831 & $-$2.4 {\scriptsize[$-$5.5, $+$0.5]} & $-$1.7 {\scriptsize[$-$5.3, $+$1.5]} & $-$0.7 {\scriptsize[$-$1.9, $+$0.5]} \\
+National & Complete days & Log & 9 & 702 & $-$2.2 {\scriptsize[$-$4.8, $+$1.0]} & $-$2.0 {\scriptsize[$-$5.0, $+$1.4]} & $-$0.2 {\scriptsize[$-$1.3, $+$1.0]} \\
+National & Complete days & Arithmetic & 9 & 702 & $-$1.2 {\scriptsize[$-$4.2, $+$1.9]} & $-$1.0 {\scriptsize[$-$4.4, $+$2.2]} & $-$0.2 {\scriptsize[$-$1.3, $+$1.1]} \\
+\end{longtable}
+\endgroup

@@ -5,10 +5,11 @@
     out/hourly_profiles.csv), Eid (event bootstrap) and the lockdown (placebo-based
     sensitivity interval), both from out/events_dependence.csv; pointwise 95% intervals.
 (b) Daily PM2.5 sub-index change per shock in index points, pooled over Dhaka-region
-    stations, with the dependence-aware intervals of Table 3: the joint-date bootstrap for
-    Friday and Saturday (out/robust_bootstrap_days.csv), the event bootstrap for Eid
-    (out/eid_checks.csv) and the placebo-widened interval for the lockdown
-    (out/lockdown_checks.csv); open circles: the US Embassy alone (out/aqi_by_shock.csv).
+    stations, with the intervals of Table 4: 95% intervals from the joint-date bootstrap for
+    Friday and Saturday (out/robust_bootstrap_days.csv) and the event bootstrap for Eid
+    (out/eid_checks.csv), and for the lockdown the placebo-based sensitivity interval
+    (out/lockdown_checks.csv), drawn dashed because it is not a calibrated 95% interval;
+    open circles: the US Embassy alone (out/aqi_by_shock.csv).
 Usage: python -I fig5_events.py
 """
 import os
@@ -39,7 +40,7 @@ def main():
     E["hour"] = E.unit.astype(int)
     E["pct"], E["lo"], E["hi"] = E.b_pct, E.lo_pct, E.hi_pct
     A = pd.read_csv(os.path.join(OUT, "aqi_by_shock.csv")).set_index("event")
-    # dependence-aware intervals, as in Table 3
+    # the intervals of Table 4
     Bd = pd.read_csv(os.path.join(OUT, "robust_bootstrap_days.csv"))
     Bd = Bd[(Bd.region == "Dhaka") & (Bd.tracer == "AQI")].set_index("day")
     Ec = pd.read_csv(os.path.join(OUT, "eid_checks.csv"))
@@ -74,8 +75,14 @@ def main():
     order = ["Friday", "Saturday", "Eid", "Lockdown"]
     A = A.reindex(order)
     y = np.arange(len(order))
-    b.errorbar(A.pooled_aqi_pts, y, xerr=[A.pooled_aqi_pts - A.lo, A.hi - A.pooled_aqi_pts],
-               fmt="o", color="#2a78d6", ms=6, capsize=2, label="pooled, Dhaka region")
+    cal = np.array([ev != "Lockdown" for ev in order])
+    b.errorbar(A.pooled_aqi_pts[cal], y[cal],
+               xerr=[(A.pooled_aqi_pts - A.lo)[cal], (A.hi - A.pooled_aqi_pts)[cal]],
+               fmt="o", color="#2a78d6", ms=6, capsize=2, label="pooled, Dhaka region (95% interval)")
+    eb = b.errorbar(A.pooled_aqi_pts[~cal], y[~cal],
+                    xerr=[(A.pooled_aqi_pts - A.lo)[~cal], (A.hi - A.pooled_aqi_pts)[~cal]],
+                    fmt="o", color="#2a78d6", ms=6, capsize=2, label="lockdown: sensitivity interval")
+    eb[2][0].set_linestyle((0, (3, 2)))
     b.scatter(A.embassy_aqi_pts, y + 0.22, marker="o", s=28, facecolors="none",
               edgecolors="#2a78d6", label="US Embassy")
     for yi, v, lo in zip(y, A.pooled_aqi_pts, A.lo):
@@ -86,7 +93,13 @@ def main():
     b.invert_yaxis()
     b.set_xlabel("Change in the daily PM2.5 sub-index (points)")
     b.set_title("(b) Daily PM2.5 sub-index", loc="left", fontsize=9)
-    b.legend(frameon=False, fontsize=7, loc="upper left")
+    from matplotlib.lines import Line2D
+    b.legend(handles=[
+        Line2D([], [], color="#2a78d6", marker="o", ms=5, lw=1.2, label="pooled, Dhaka region (95% interval)"),
+        Line2D([], [], color="#2a78d6", marker="o", ms=5, lw=1.2, ls=(0, (3, 2)),
+               label="lockdown: sensitivity interval"),
+        Line2D([], [], color="#2a78d6", marker="o", ms=5, mfc="none", ls="none", label="US Embassy")],
+        frameon=False, fontsize=7, loc="upper left")
     b.set_xlim(min(A.lo.min(), A.embassy_aqi_pts.min()) - 8, max(A.hi.max(), 0) + 3)
     b.spines[["top", "right"]].set_visible(False)
     b.grid(axis="x", color=GRID, lw=0.6)

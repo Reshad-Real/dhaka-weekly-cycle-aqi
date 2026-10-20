@@ -1,0 +1,31 @@
+\begingroup\small
+\begin{longtable}{L{9cm} >{\raggedleft\arraybackslash}p{3cm}}
+\caption{Quality-control rules applied to the CAMS-BD hourly record and the number of station-hours each removed or set missing, all years. Q0 timestamps that could not be parsed; Q1 values outside physical limits; Q2 runs of six or more identical consecutive hourly values; Q3 hours with PM$_{2.5}$ above 1.1 times PM$_{10}$; Q4 duplicate station-hours.}\label{tab:s-qc}\\
+\toprule
+\textbf{Rule} & \textbf{Station-hours} \\
+\midrule\endfirsthead
+\toprule
+\textbf{Rule} & \textbf{Station-hours} \\
+\midrule\endhead
+\bottomrule\endfoot
+Q0 unparseable timestamp dropped & 0 \\
+Q4 duplicates removed & 9,013 \\
+Q1 range PM25 & 175 \\
+Q1 range PM10 & 510 \\
+Q1 range NO2 & 3,834 \\
+Q1 range NOX & 518 \\
+Q1 range NO & 653 \\
+Q1 range SO2 & 85 \\
+Q1 range O3 & 433 \\
+Q1 range CO & 280 \\
+Q2 stuck runs PM25 & 5,914 \\
+Q2 stuck runs PM10 & 3,977 \\
+Q2 stuck runs NO2 & 8,609 \\
+Q2 stuck runs NOX & 4,953 \\
+Q2 stuck runs NO & 7,459 \\
+Q2 stuck runs SO2 & 5,358 \\
+Q2 stuck runs O3 & 10,521 \\
+Q2 stuck runs CO & 11,377 \\
+Q3 PM2.5 $>$ 1.1 PM10 & 27,719 \\
+\end{longtable}
+\endgroup
