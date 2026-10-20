@@ -42,6 +42,8 @@ Data and code for the manuscript
 > PM2.5 in Dhaka: implications for the daily air quality index.* Manuscript prepared for
 > submission to Urban Climate, 2026 (an earlier draft was titled "Dhaka's working week does
 > not reach the night").
+>
+> Release v2.2 is the version the manuscript describes; v2.1 has the same code and results.
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC
 University, Dhaka, Bangladesh. Correspondence: Mirza Rasheduzzaman,
