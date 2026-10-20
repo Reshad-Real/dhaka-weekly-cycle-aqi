@@ -87,13 +87,13 @@ def main():
     a.set_xlabel("Local hour")
 
     a = ax[2]
-    for reg, col in (("national", BLUE), ("Dhaka", ORANGE)):
-        q, k = seq(P, reg, "NOX_CO")
-        if q.empty:
-            continue
-        a.fill_between(q.x, q.lo, q.hi, color=col, alpha=0.12, lw=0)
-        a.plot(q.x, q.pct, color=col, lw=2, label="%s (k=%d)" % (reg, k))
-    a.set_ylim(-35, 35)
+    # National stations only: the single Dhaka station where both analyzers pass has hourly
+    # intervals about 50 percentage points wide and cannot resolve the signature.
+    q, k = seq(P, "national", "NOX_CO")
+    a.fill_between(q.x, q.placebo_min, q.placebo_max, color=BAND, lw=0, label="working-day placebos")
+    a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.15, lw=0, label="95% interval")
+    a.plot(q.x, q.pct, color=BLUE, lw=2, label="national stations (k=%d)" % k)
+    a.set_ylim(-16, 16)
     a.set_ylabel("NOx/CO ratio vs same hour Sun-Wed (%)")
     a.set_title("(c) Fleet signature: NOx per unit CO", loc="left", fontsize=9, pad=14)
     day_axis(a)
@@ -104,7 +104,7 @@ def main():
 
     # ------------------------------------------------------------------ Fig. 3
     fig, ax = plt.subplots(1, 2, figsize=(11, 3.6), sharey=True)
-    for a, reg, title in ((ax[0], "Dhaka", "(a) Dhaka region"), (ax[1], "national", "(b) Ten other cities")):
+    for a, reg, title in ((ax[0], "Dhaka", "(a) Dhaka region"), (ax[1], "national", "(b) Nine stations in other cities")):
         q, k = seq(P, reg, "PM25")
         a.fill_between(q.x, q.placebo_min, q.placebo_max, color=BAND, lw=0, label="working-day placebos")
         a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.18, lw=0, label="95% interval")

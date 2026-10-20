@@ -153,7 +153,8 @@ def robust():
     b = pd.read_csv(os.path.join(OUT, "robust_bootstrap.csv"))
     names = {"main": "Main (random effects)", "cluster": "Week-clustered errors", "nomet": "No meteorology",
              "y2019_21": "2019--2021 only", "y2022_25": "2022--2025 only", "dry": "Dry season (Nov--Apr)",
-             "wet": "Wet season (May--Oct)", "noembassy": "Without the Embassy"}
+             "wet": "Wet season (May--Oct)", "noembassy": "Without the Embassy",
+             "screen_none": "No station screens", "screen_strict": "Stricter screens"}
     rows = []
     for reg in ("Dhaka", "national"):
         q = r[(r.region == reg) & (r.tracer == "PM25") & (r.day == "Fri")]
@@ -165,8 +166,8 @@ def robust():
         variants = list(names) + sorted(v for v in q.variant.unique() if v.startswith("loo_"))
         for v in variants:
             g = q[q.variant == v].set_index("block")
-            if g.empty:
-                continue
+            if g.empty or (reg == "national" and v.startswith("screen")):
+                continue        # national PM2.5 has no reference screen, so these equal Main
             lab = names.get(v, "Leave out " + v[4:])
             rows.append([lab] + ["%s {\\scriptsize(%s)}" % (m(s(g.loc[x, "pct"])), m(s(g.loc[x, "z"], 1)))
                                  if x in g.index else "--" for x in BLOCKS])
@@ -177,7 +178,10 @@ def robust():
     longtable("supp_robust.tex", "L{3.8cm}" + " C{2.2cm}" * 5,
               r"Robustness of the pooled Friday PM$_{2.5}$ effect by diurnal block, percent. Bootstrap rows: "
               r"95\% interval from 400 joint-date moving-block resamples (14-day blocks). Other rows: "
-              r"$z$-statistic in parentheses, random-effects pooling.", "tab:s-robust",
+              r"$z$-statistic in parentheses, random-effects pooling. No station screens: every Dhaka-region "
+              r"CAMS station, adding Savar. Stricter screens: daily correlation with the Embassy of at least "
+              r"0.85 instead of 0.6 (the Embassy and four CAMS stations). National \pmtf{} is not screened, "
+              r"so these two rows are given for the Dhaka region only.", "tab:s-robust",
               ["Variant"] + BLAB, fixed, size=r"\footnotesize")
 
 
@@ -231,11 +235,22 @@ def activity():
         for _, r in a[a.shock == shock].sort_values(["outcome", "region"]).iterrows():
             rows.append([shock, TR.get(r.outcome, r.outcome), r.region.replace("national", "National"),
                          int(r.k), ci(r.pct, r.lo, r.hi)])
+    # The national PM2.5 lockdown estimate is withheld (tropomi_events.py); the caption gives
+    # the level shift that makes it unreliable, computed here from the QC'd hourly table.
+    q = pd.read_csv(os.path.join(HERE, "..", "data", "cams_hourly_qc.csv.gz"),
+                    usecols=["station", "time", "PM25"], parse_dates=["time"])
+    jf = lambda st, yr: q[(q.station == st) & (q.time.dt.year == yr) & q.time.dt.month.isin([1, 2])].PM25.mean()
+    shift = (jf("Agrabad CDA Chattogram", 2019), jf("Agrabad CDA Chattogram", 2020), jf("BARC", 2019), jf("BARC", 2020))
     longtable("supp_activity.tex", "L{2.0cm} L{2.6cm} L{1.6cm} C{0.8cm} C{3.4cm}",
               r"Daily-mean response to each shock in the present designs (Section 3 of the main text): "
               r"TROPOMI NO$_2$ over the domain, "
               r"and PM$_{2.5}$, NO$_x$ and CO pooled over screened stations; percent with 95\% interval. "
-              r"Gas analyzers are not compared across years, so no gas lockdown estimate is given.",
+              r"Gas analyzers are not compared across years, so no gas lockdown estimate is given. Nor "
+              r"is a national PM$_{2.5}$ lockdown estimate: the design reads March--May 2020 against each "
+              r"station's own 2020 level, the national stations have no reference monitor against which a "
+              r"level shift could be detected, and the two with 2020 data, both in Chattogram, show one "
+              + (r"(at Agrabad, January--February PM$_{2.5}$ averaged %.1f\,$\mu$g\,m$^{-3}$ in 2019 and "
+                 r"%.1f in 2020, while at BARC in Dhaka it rose from %.1f to %.1f)." % shift),
               "tab:s-activity", ["Shock", "Outcome", "Region", "$k$", "Change (\\%)"], rows)
 
 

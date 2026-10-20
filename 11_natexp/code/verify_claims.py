@@ -276,8 +276,9 @@ def claims(r):
          -r.hourly("Dhaka", "NOX", "Sat", range(0, 7)).min()])
     nc_nat = r.hourly("national", "NOX_CO", "Fri", range(0, 4))
     nc_dh = r.hourly("Dhaka", "NOX_CO", "Fri", range(2, 6))
+    dh_nc = r.hp[(r.hp.region == "Dhaka") & (r.hp.tracer == "NOX_CO")]
     add("NOx/CO signature", "more of the fleet, is",
-        [nc_nat.min(), nc_nat.max(), nc_dh.min(), nc_dh.max()])
+        [nc_nat.min(), nc_nat.max(), float((dh_nc.hi - dh_nc.lo).median())])
 
     # ---------------------------------------------------------------- 4.2 PM2.5
     fri_am = r.hourly("Dhaka", PM, "Fri", range(0, 12))
@@ -334,6 +335,11 @@ def claims(r):
          pz("y2022_25", "afternoon 12-17"), pz("y2022_25", "evening 18-23"),
          A(pp("y2019_21", "afternoon 12-17")), A(pp("y2019_21", "evening 18-23")),
          pz("y2019_21", "afternoon 12-17"), pz("y2019_21", "evening 18-23"),
+         A(pp("screen_none", "afternoon 12-17")), A(pp("screen_none", "evening 18-23")),
+         int(r.pooled("screen_strict", "Dhaka", PM, "Fri", "afternoon 12-17", "k")),
+         A(pp("screen_strict", "afternoon 12-17")), A(pp("screen_strict", "evening 18-23")),
+         A(r.pooled("screen_none", "national", "NOX", "Fri", "afternoon 12-17")),
+         A(r.bootstrap("national", "NOX", "afternoon 12-17")),
          qa, qe, qn, infl])
 
     # ---------------------------------------------------------------- 4.3 weighting
@@ -433,7 +439,7 @@ def claims(r):
     add("discussion evening", "largest at the national stations (",
         [r.bootstrap("national", PM, "evening 18-23")])
     add("discussion before noon", "identical hourly cut buys", [night_gain])
-    add("discussion 5.2 rest night", "fleet; the rest night sees lower",
+    add("discussion 5.2 rest night", "would make it; the rest night sees lower",
         [-r.pooled("main", "national", "NOX", "Sat", "night 00-05")])
     add("discussion 5.2 Dhaka rest night", "On the rest night in Dhaka",
         [-sat_dh.mean(), -r.hourly("Dhaka", "NOX", "Sat", range(0, 6)).max(),

@@ -12,6 +12,8 @@ This script re-estimates the result several ways:
   dry         November-April            wet        May-October
   noembassy   Dhaka pool without the US Embassy monitor
   loo_<site>  Dhaka pool leaving one station out
+  screen_none, screen_strict   the same fits with no station screens, and with stricter
+              thresholds (PM2.5 r >= 0.85; gas rho >= 0.3; flat-line CV >= 0.2)
   bootstrap   joint-date moving-block bootstrap (14-day blocks resampled identically for
               every station, B = 400), which keeps the cross-station dependence; the
               pooled estimate uses fixed inverse-variance weights from the main fit
@@ -92,31 +94,67 @@ def fit(s, dw, met=True, cov="HAC", point_only=False):
     return float(r.params[0]), float(r.bse[0] * corr), int(n)
 
 
+# Station screens as rule sets.  "main" is the screen every other result uses (screens.py);
+# the other two bound how much the result depends on thresholds chosen after inspecting
+# the diagnostics.  r: daily PM2.5 correlation with the Embassy and lag: best hourly lag
+# (Dhaka-region PM2.5); rho: correlation of a gas analyzer with TROPOMI NO2 (Dhaka region);
+# cv: flat-line threshold on the 30-day coefficient of variation (all gas analyzers).
+SCREEN_RULES = {
+    "main": dict(r=0.6, lag=1, rho=0.2, cv=0.15),
+    "screen_none": dict(r=None, lag=None, rho=None, cv=None),
+    "screen_strict": dict(r=0.85, lag=1, rho=0.3, cv=0.2),
+}
+
+
+def passes(rule, st, reg, y, val, fl):
+    """True if this station's analyzer for y passes the screen `rule`."""
+    if st == "US Embassy":
+        return y == "PM25"            # the reference monitor; it measures no gases
+    if y == "PM25":
+        if reg != "Dhaka" or rule["r"] is None:
+            return True
+        v = val.loc[st]
+        return v.daily_r_embassy >= rule["r"] and abs(v.best_lag_h) <= rule["lag"]
+    if rule["cv"] is not None and (st, y) in fl and fl[(st, y)] < rule["cv"]:
+        return False
+    if reg == "Dhaka" and rule["rho"] is not None:
+        return st in val.index and val.loc[st, y + "_rho_tropomi"] >= rule["rho"]
+    return True
+
+
 def load(root):
     metd, metb = met_daily(root)
     hart, eid, eid_days = calendars(root)
     ok_pm, gas_ok, flat = screens()
+    val = pd.read_csv(os.path.join(OUT, "cams_validation.csv")).set_index("station")
+    flt = pd.read_csv(os.path.join(OUT, "cams_flatline_check.csv"))
+    fl = {(r.station, r.tracer): r.daily_cv30 for r in flt.itertuples()}
     cams = pd.read_csv(os.path.join(DATA, "cams_hourly_qc.csv.gz"), parse_dates=["time"])
     cams = cams[(cams.time >= "2019-01-01") & (cams.time < "2025-01-01")]
     emb = embassy_hourly(root)
     emb = emb[(emb.time >= "2019-01-01") & (emb.time < "2026-01-01")]
     allh = pd.concat([cams, emb], ignore_index=True)
-    frames = {}
+    frames, frames_all, rules_of = {}, {}, {}
     for st, h in allh.groupby("station"):
         reg = "Dhaka" if st in DHAKA else "national"
-        if reg == "Dhaka" and st != "US Embassy" and st not in ok_pm:
-            continue
         db = frame(h, metd, hart, eid_days, how="blocks", metb=metb)
         dd = frame(h, metd, hart, eid_days)
         for y in ("PM25", "NOX", "CO"):
-            if y != "PM25" and not gas_allowed(st, y, reg, gas_ok, flat):
-                continue
+            ok = {name for name, rule in SCREEN_RULES.items() if passes(rule, st, reg, y, val, fl)}
+            # the main rule must reproduce screens.py exactly
+            main_ok = (st == "US Embassy" or reg != "Dhaka" or st in ok_pm) if y == "PM25" \
+                else gas_allowed(st, y, reg, gas_ok, flat)
+            assert ("main" in ok) == main_ok, (st, y)
             for blk in ORDER:
                 src = dd if blk == "daily" else db[db.block == blk]
                 if y not in src or src[y].notna().sum() < 300:
                     continue
-                frames[(st, reg, y, blk)] = prep(src, y)
-    return frames, allh, metb, (hart, eid_days)
+                key = (st, reg, y, blk)
+                frames_all[key] = prep(src, y)
+                rules_of[key] = ok
+                if "main" in ok:
+                    frames[key] = frames_all[key]
+    return frames, allh, metb, (hart, eid_days), frames_all, rules_of
 
 
 def pooled_table(est, label):
@@ -132,8 +170,8 @@ def pooled_table(est, label):
 
 
 def main(root):
-    frames, allh, metb, (hart, eid_days) = load(root)
-    print("station-block-tracer frames:", len(frames))
+    frames, allh, metb, (hart, eid_days), frames_all, rules_of = load(root)
+    print("station-block-tracer frames:", len(frames), "(unscreened:", len(frames_all), ")")
 
     # ---------------------------------------------------------------- variants
     variants = {
@@ -160,11 +198,27 @@ def main(root):
         est["variant"] = name
         est_all.append(est)
         print("variant %-9s %d station estimates" % (name, len(est)))
+    # screening thresholds: the same Friday and Saturday fits on other station sets
+    for name in ("screen_none", "screen_strict"):
+        rows = []
+        for key, s in frames_all.items():
+            if name not in rules_of[key]:
+                continue
+            st, reg, y, blk = key
+            for dw in (4, 5):
+                r = fit(s, dw)
+                if r:
+                    rows.append(dict(station=st, region=reg, tracer=y, block=blk,
+                                     day=DAYN[dw], b=r[0], se=r[1], n=r[2]))
+        est = pd.DataFrame(rows)
+        est["variant"] = name
+        est_all.append(est)
+        print("variant %-13s %d station estimates" % (name, len(est)))
     EST = pd.concat(est_all, ignore_index=True)
     EST.to_csv(os.path.join(OUT, "robust_station_estimates.csv"), index=False)
 
     tabs = []
-    for name in variants:
+    for name in list(variants) + ["screen_none", "screen_strict"]:
         tabs.append(pooled_table(EST[EST.variant == name], name))
     main = EST[EST.variant == "main"]
     tabs.append(pooled_table(main[main.station != "US Embassy"], "noembassy"))

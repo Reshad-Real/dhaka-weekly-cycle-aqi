@@ -101,6 +101,13 @@ def main(root):
             for name, fn in designs.items():
                 if tracer != "PM25" and name == "Lockdown":
                     continue        # gas analyzers are not comparable across years
+                if reg == "national" and name == "Lockdown":
+                    # The lockdown is read against each station's own 2020 level outside the
+                    # window, so a level shift between years biases it.  Dhaka-region PM2.5
+                    # stations are screened against the Embassy reference; the national ones
+                    # have no reference, and the two with 2020 data (both in Chattogram) show a
+                    # shift: Agrabad's January-February mean halves from 2019 to 2020.
+                    continue
                 # the lockdown needs earlier years to anchor the seasonal shape; every other
                 # design uses 2019 onwards, the same record as the main tables
                 s = s_all if name == "Lockdown" else s_all[s_all.index >= "2019-01-01"]

@@ -111,7 +111,7 @@ def main(root):
     print(W3.round(2).to_string(index=False))
 
     # ---------------------------------------------------------------- W4
-    frames, _, _, _ = rb.load(root)
+    frames = rb.load(root)[0]          # the main-screened frames
     rows = []
     for (st, reg, y, blk), s in frames.items():
         if y != "PM25" or blk == "daily":
