@@ -6,9 +6,12 @@ Fig. 2  (a) Google mobility change for the lockdown, each Eid and strike days: t
             the national stations, against the same clock hour Sunday-Wednesday.
         (c) The NOx/CO ratio over the same 72 hours (diesel share signature).
 Fig. 3  PM2.5 across the same 72 hours: (a) Dhaka region, (b) national stations, with the
-        range of the four working-day placebos at each hour and 95% intervals.
+        range of the four working-day placebos at each hour.
+Intervals (2b, 2c, 3): pointwise 95% intervals (shaded) and the simultaneous 95% band for the
+whole 72-hour curve (dashed), both from the joint-date bootstrap of hourly_boot.py.
 
-Inputs: out/mobility_shocks.csv, out/hourly_profiles.csv.  Usage: python -I figs_2_3.py
+Inputs: out/mobility_shocks.csv, out/hourly_profiles.csv, out/hourly_boot.csv.
+Usage: python -I figs_2_3.py
 """
 import os
 
@@ -48,6 +51,11 @@ def main():
     plt.rcParams.update({"font.size": 8, "axes.edgecolor": INK2, "xtick.color": INK2,
                          "ytick.color": INK2})
     P = pd.read_csv(os.path.join(OUT, "hourly_profiles.csv"))
+    # dependence-aware intervals replace the independent-station ones (Thu, Fri, Sat)
+    H = pd.read_csv(os.path.join(OUT, "hourly_boot.csv"))
+    P = P.drop(columns=["lo", "hi"]).merge(
+        H[["region", "tracer", "day", "hour", "lo", "hi", "sim_lo", "sim_hi"]],
+        on=["region", "tracer", "day", "hour"], how="left")
     M = pd.read_csv(os.path.join(OUT, "mobility_shocks.csv"))
 
     # ------------------------------------------------------------------ Fig. 2
@@ -78,6 +86,8 @@ def main():
     for tr, col in (("NOX", BLUE), ("CO", ORANGE)):
         q, k = seq(P, "national", tr)
         a.fill_between(q.x, q.lo, q.hi, color=col, alpha=0.15, lw=0)
+        a.plot(q.x, q.sim_lo, color=col, lw=0.7, ls="--")
+        a.plot(q.x, q.sim_hi, color=col, lw=0.7, ls="--")
         a.plot(q.x, q.pct, color=col, lw=2, label="%s (k=%d)" % ("NOx" if tr == "NOX" else "CO", k))
     a.set_ylim(-16, 12)
     a.set_ylabel("vs same hour Sun-Wed (%)")
@@ -87,11 +97,12 @@ def main():
     a.set_xlabel("Local hour")
 
     a = ax[2]
-    # National stations only: the single Dhaka station where both analyzers pass has hourly
-    # intervals about 50 percentage points wide and cannot resolve the signature.
+    # the national stations (the two Dhaka stations with both analyzers are in the text)
     q, k = seq(P, "national", "NOX_CO")
     a.fill_between(q.x, q.placebo_min, q.placebo_max, color=BAND, lw=0, label="working-day placebos")
-    a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.15, lw=0, label="95% interval")
+    a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.15, lw=0, label="pointwise 95%")
+    a.plot(q.x, q.sim_lo, color=BLUE, lw=0.7, ls="--", label="simultaneous 95%")
+    a.plot(q.x, q.sim_hi, color=BLUE, lw=0.7, ls="--")
     a.plot(q.x, q.pct, color=BLUE, lw=2, label="national stations (k=%d)" % k)
     a.set_ylim(-16, 16)
     a.set_ylabel("NOx/CO ratio vs same hour Sun-Wed (%)")
@@ -107,7 +118,9 @@ def main():
     for a, reg, title in ((ax[0], "Dhaka", "(a) Dhaka region"), (ax[1], "national", "(b) Nine stations in other cities")):
         q, k = seq(P, reg, "PM25")
         a.fill_between(q.x, q.placebo_min, q.placebo_max, color=BAND, lw=0, label="working-day placebos")
-        a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.18, lw=0, label="95% interval")
+        a.fill_between(q.x, q.lo, q.hi, color=BLUE, alpha=0.18, lw=0, label="pointwise 95%")
+        a.plot(q.x, q.sim_lo, color=BLUE, lw=0.7, ls="--", label="simultaneous 95%")
+        a.plot(q.x, q.sim_hi, color=BLUE, lw=0.7, ls="--")
         a.plot(q.x, q.pct, color=BLUE, lw=2, label="PM2.5 (k=%d stations)" % k)
         a.set_ylim(-16, 10)
         day_axis(a)

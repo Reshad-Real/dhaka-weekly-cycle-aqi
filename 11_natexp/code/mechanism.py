@@ -2,14 +2,22 @@
 
 For the afternoon and evening blocks of PM2.5, Dhaka region and national, per station:
   vc_interaction   Friday x (log ventilation coefficient of the block, centred) added to the
-                   main weekly design; reported per doubling of ventilation
-  blh_interaction  Friday x (log boundary-layer height of the block, centred)
+                   main weekly design, whose controls already contain the log ventilation
+                   coefficient and its square (so its main effect is in the model)
+  blh_interaction  Friday x (log boundary-layer height of the block, centred), with the centred
+                   log boundary-layer height also added as a main effect
+                   Both are reported per doubling of the variable in two ways: 100 delta ln2,
+                   the change of the Friday contrast on the log scale (approximately a change
+                   in percentage points), and on the response scale, the exact change of the
+                   percent contrast at the centred reference, 100 exp(beta) (2^delta - 1)
   tercile_diff     the Friday effect in the lowest minus the highest tercile of the block's
                    ventilation coefficient (station-specific terciles)
   lagged_met       the Friday effect with the previous block's and the previous day's log
                    ventilation coefficient added as controls
-  carryover        the Friday effect with the previous block's log concentration added (a
-                   dynamic model); the long-run effect is beta / (1 - rho)
+  carryover        the Friday effect with the previous block's log concentration added: a
+                   sensitivity check on carry-over from earlier hours, not a model of a
+                   sustained change (the previous block can itself reflect Friday activity),
+                   so no long-run effect is derived
 Interactions and the tercile difference are pooled with fixed inverse-variance weights and
 given joint-date moving-block bootstrap intervals (B = 400, 14-day blocks); the lagged and
 carryover models are pooled by DerSimonian-Laird.  A positive interaction means the Friday
@@ -125,14 +133,15 @@ def main(root):
                 s = F[k]
                 st = k[0]
                 vi = fit_terms(s, 4, inter=("c_vc",))
-                bi = fit_terms(s, 4, inter=("c_blh",))
+                bi = fit_terms(s, 4, extra=("c_blh",), inter=("c_blh",))
                 lo = fit_terms(s[s.terc == "low"], 4)
                 hi = fit_terms(s[s.terc == "high"], 4)
                 lm = fit_terms(s, 4, extra=("lvc_prev", "lvc_prevday"))
                 co = fit_terms(s, 4, extra=("ly_prev",))
                 if None in (vi, bi, lo, hi, lm, co):
                     continue
-                res[st] = dict(vi=vi[1], bi=bi[1], lo=lo[0], hi=hi[0], lm=lm[0], co=co[0], rho=co[1])
+                res[st] = dict(vi=vi[1], bi=bi[1], vb=vi[0], bb=bi[0], lo=lo[0], hi=hi[0], lm=lm[0],
+                               co=co[0], rho=co[1])
             if len(res) < 2:
                 continue
 
@@ -142,7 +151,7 @@ def main(root):
                 pb, pse, tau2, i2, k = dl_pool(g.b, g.se)
                 return pb, pse, {r.st: 1 / (r.se ** 2 + tau2) for r in g.itertuples()}, k
 
-            P = {n: pool(n) for n in ("vi", "bi", "lo", "hi", "lm", "co", "rho")}
+            P = {n: pool(n) for n in ("vi", "bi", "vb", "bb", "lo", "hi", "lm", "co", "rho")}
             # bootstrap the interactions and the tercile difference
             nblk = int(np.ceil((pd.Timestamp("2025-12-31") - rb.T0).days / rb.BLOCK_DAYS)) + 1
             byb = {}
@@ -152,24 +161,26 @@ def main(root):
                 s = F[k][F[k].dow.isin(rb.WORK + [4])]
                 bid = ((s.index - rb.T0).days // rb.BLOCK_DAYS).values
                 byb[k[0]] = (s, {x: np.where(bid == x)[0] for x in np.unique(bid)})
-            D = {"vi": [], "bi": [], "diff": []}
+            D = {"vi": [], "bi": [], "vb": [], "bb": [], "diff": []}
             for _ in range(B):
                 draw = RNG.integers(0, nblk, nblk)
-                acc = {"vi": {}, "bi": {}, "lo": {}, "hi": {}}
+                acc = {"vi": {}, "bi": {}, "vb": {}, "bb": {}, "lo": {}, "hi": {}}
                 for st, (s, by) in byb.items():
                     idx = np.concatenate([by[x] for x in draw if x in by] or [np.array([], int)])
                     if len(idx) < 150:
                         continue
                     ss = s.iloc[idx]
-                    for name, kw in (("vi", dict(inter=("c_vc",))), ("bi", dict(inter=("c_blh",)))):
+                    for name, main_, kw in (("vi", "vb", dict(inter=("c_vc",))),
+                                            ("bi", "bb", dict(extra=("c_blh",), inter=("c_blh",)))):
                         r = fit_terms(ss, 4, point=True, **kw)
                         if r is not None:
                             acc[name][st] = r[1]
+                            acc[main_][st] = r[0]
                     for tn in ("lo", "hi"):
                         r = fit_terms(ss[ss.terc == ("low" if tn == "lo" else "high")], 4, point=True)
                         if r is not None:
                             acc[tn][st] = r[0]
-                for name in ("vi", "bi"):
+                for name in ("vi", "bi", "vb", "bb"):
                     w = P[name][2]
                     if acc[name]:
                         D[name].append(sum(w[s] * v for s, v in acc[name].items()) / sum(w[s] for s in acc[name]))
@@ -181,10 +192,18 @@ def main(root):
                     D["diff"].append(100 * (np.exp(lo_b) - 1) - 100 * (np.exp(hi_b) - 1))
             f = lambda v: 100 * (np.exp(v) - 1)
             ln2 = np.log(2)
-            for name, lab in (("vi", "vc_interaction_per_doubling"), ("bi", "blh_interaction_per_doubling")):
+            for name, main_, lab in (("vi", "vb", "vc"), ("bi", "bb", "blh")):
                 d = np.array(D[name]) * ln2 * 100
-                rows.append(dict(test=lab, region=reg, block=b, k=P[name][3], est=P[name][0] * ln2 * 100,
-                                 lo=np.percentile(d, 2.5), hi=np.percentile(d, 97.5), unit="pp per doubling"))
+                rows.append(dict(test=lab + "_interaction_per_doubling", region=reg, block=b, k=P[name][3],
+                                 est=P[name][0] * ln2 * 100, lo=np.percentile(d, 2.5),
+                                 hi=np.percentile(d, 97.5), unit="log-scale x 100 per doubling"))
+                # the exact change of the percent contrast per doubling, at the centred reference
+                ex = lambda bb, dd: 100 * np.exp(bb) * (np.exp(dd * ln2) - 1)  # noqa: E731
+                de = ex(np.array(D[main_]), np.array(D[name]))
+                rows.append(dict(test=lab + "_change_per_doubling", region=reg, block=b, k=P[name][3],
+                                 est=ex(P[main_][0], P[name][0]), lo=np.percentile(de, 2.5),
+                                 hi=np.percentile(de, 97.5), unit="pp per doubling",
+                                 low=f(P[main_][0])))
             d = np.array(D["diff"])
             rows.append(dict(test="tercile_low_minus_high", region=reg, block=b, k=P["lo"][3],
                              est=f(P["lo"][0]) - f(P["hi"][0]), lo=np.percentile(d, 2.5), hi=np.percentile(d, 97.5),
@@ -196,9 +215,7 @@ def main(root):
             rho = P["rho"][0]
             rows.append(dict(test="carryover_rho", region=reg, block=b, k=P["rho"][3], est=rho,
                              lo=rho - 1.96 * P["rho"][1], hi=rho + 1.96 * P["rho"][1], unit="coef"))
-            rows.append(dict(test="friday_long_run_carryover", region=reg, block=b, k=P["co"][3],
-                             est=f(P["co"][0] / (1 - rho)), lo=np.nan, hi=np.nan, unit="pct"))
-            print(pd.DataFrame(rows[-9:]).round(2).to_string(index=False), flush=True)
+            print(pd.DataFrame(rows[-10:]).round(2).to_string(index=False), flush=True)
     R = pd.DataFrame(rows)
     R.to_csv(os.path.join(OUT, "mechanism.csv"), index=False)
 

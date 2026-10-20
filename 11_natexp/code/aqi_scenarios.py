@@ -86,7 +86,11 @@ def metrics(pm, codes, nd):
     years = len(d) / 365.25
     return dict(n_days=len(d), mean_pm=float(d.mean()), mean_aqi=float(np.nanmean(a)),
                 days150=float((a > 150).sum() / years), days200=float((a > 200).sum() / years),
-                days300=float((a > 300).sum() / years))
+                days300=float((a > 300).sum() / years),
+                # sensitivity to the cap at 500: days above 325.4 ug m-3, and the mean index
+                # with the top breakpoint segment extended linearly instead
+                n_capped=int((np.floor(d * 10) / 10 > 325.4).sum()),
+                mean_aqi_uncapped=float(np.nanmean(aqi_pm25(d, cap=False))))
 
 
 def run(prep, eff):
@@ -127,6 +131,7 @@ def main(root):
     for s in SCEN:
         r = point[s]
         row = dict(scenario=s, **r, d_mean_aqi=r["mean_aqi"] - b["mean_aqi"],
+                   d_mean_aqi_uncapped=r["mean_aqi_uncapped"] - b["mean_aqi_uncapped"],
                    d_pm_pct=100 * (r["mean_pm"] / b["mean_pm"] - 1),
                    **{"d_" + t: r[t] - b[t] for t in ("days150", "days200", "days300")})
         D = pd.DataFrame(sims[s])

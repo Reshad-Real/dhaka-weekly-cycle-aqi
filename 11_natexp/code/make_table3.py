@@ -3,10 +3,12 @@
   Friday, Saturday  joint-date moving-block bootstrap (out/robust_bootstrap_days.csv): the same
                     calendar blocks are resampled for every station, so shared dates and
                     weather are kept; the AQI sub-index column comes from the same draws
-  Eid               event bootstrap over the 11 usable events (out/events_dependence.csv;
-                    the AQI from out/eid_checks.csv)
-  Lockdown          model interval widened by the spread of the same design in placebo
-                    windows of other years (out/events_dependence.csv, out/lockdown_checks.csv)
+  Eid               event bootstrap over the 11 usable events (blocks from
+                    out/events_dependence.csv; the daily mean and the AQI from
+                    out/eid_checks.csv, the run the text quotes)
+  Lockdown          two rows: the model interval, and the placebo-based sensitivity interval
+                    (model variance plus the variance of four pseudo-lockdowns)
+                    (out/events_dependence.csv, out/lockdown_checks.csv)
 Writes out/table3.csv and out/table3.md.  Usage: python -I make_table3.py
 """
 import os
@@ -40,13 +42,23 @@ def main():
     D = pd.read_csv(os.path.join(OUT, "events_dependence.csv"))
     E = pd.read_csv(os.path.join(OUT, "eid_checks.csv"))
     L = pd.read_csv(os.path.join(OUT, "lockdown_checks.csv"))
+    D = D[~D.unit.astype(str).str.isdigit()]                 # blocks and daily mean only
     ea = E[(E.analysis == "event_boot") & (E.outcome == "AQI")].iloc[0]
+    ep = E[(E.analysis == "event_boot") & (E.outcome == "PM25")].iloc[0]
+    lm = L[(L.analysis == "main") & (L.outcome == "AQI")].iloc[0]
     la = L[(L.analysis == "main_with_placebo_spread") & (L.outcome == "AQI")].iloc[0]
-    for ev, interval, arow in (("Eid", "event bootstrap", ea), ("Lockdown", "model + placebo spread", la)):
-        g = D[D.event == ev].set_index("unit")
-        rows.append(dict(shock=ev, region="Dhaka", tracer="PM2.5", interval="%s (k=%d)" % (interval, g.k.max()),
-                         **{u: cell(g.loc[u, "b_pct"], g.loc[u, "lo_pct"], g.loc[u, "hi_pct"]) if u in g.index
-                            else "" for u in UNITS},
+    g = D[D.event == "Eid"].set_index("unit")
+    cells = {u: cell(g.loc[u, "b_pct"], g.loc[u, "lo_pct"], g.loc[u, "hi_pct"]) if u in g.index else ""
+             for u in UNITS}
+    cells["daily"] = cell(ep.b_pct, ep.lo_pct, ep.hi_pct)
+    rows.append(dict(shock="Eid", region="Dhaka", tracer="PM2.5", interval="event bootstrap (k=%d)" % g.k.max(),
+                     **cells, **{"daily AQI (points)": cell(ea.b, ea.lo, ea.hi)}))
+    g = D[D.event == "Lockdown"].set_index("unit")
+    for lab, lo, hi, arow in (("model interval", "lo_model_pct", "hi_model_pct", lm),
+                              ("placebo-based sensitivity interval", "lo_pct", "hi_pct", la)):
+        rows.append(dict(shock="Lockdown", region="Dhaka", tracer="PM2.5", interval="%s (k=%d)" % (lab, g.k.max()),
+                         **{u: cell(g.loc[u, "b_pct"], g.loc[u, lo], g.loc[u, hi]) if u in g.index else ""
+                            for u in UNITS},
                          **{"daily AQI (points)": cell(arow.b, arow.lo, arow.hi)}))
     T = pd.DataFrame(rows)
     T.to_csv(os.path.join(OUT, "table3.csv"), index=False)

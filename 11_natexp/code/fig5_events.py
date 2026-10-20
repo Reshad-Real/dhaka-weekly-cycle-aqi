@@ -1,8 +1,9 @@
 """Fig. 5: hour profiles of the three activity shocks, and the change in the daily PM2.5 sub-index.
 
-(a) Pooled Dhaka-region percent change in PM2.5 by local hour for Friday (from
-    out/robust_hourly.csv, with the working-day placebo band), Eid and the lockdown (from
-    out/events_pooled.csv), 95% intervals shaded (stations treated as independent).
+(a) Pooled Dhaka-region percent change in PM2.5 by local hour for Friday (joint-date
+    bootstrap, out/hourly_boot.csv, with the working-day placebo band of
+    out/hourly_profiles.csv), Eid (event bootstrap) and the lockdown (placebo-based
+    sensitivity interval), both from out/events_dependence.csv; pointwise 95% intervals.
 (b) Daily PM2.5 sub-index change per shock in index points, pooled over Dhaka-region
     stations, with the dependence-aware intervals of Table 3: the joint-date bootstrap for
     Friday and Saturday (out/robust_bootstrap_days.csv), the event bootstrap for Eid
@@ -28,11 +29,15 @@ def main():
     import matplotlib.pyplot as plt
     plt.rcParams.update({"font.size": 8, "axes.edgecolor": INK2, "xtick.color": INK2,
                          "ytick.color": INK2})
-    H = pd.read_csv(os.path.join(OUT, "robust_hourly.csv"))
-    fri = H[(H.region == "Dhaka") & (H.day == "Fri")].sort_values("hour")
-    E = pd.read_csv(os.path.join(OUT, "events_pooled.csv"))
+    H = pd.read_csv(os.path.join(OUT, "hourly_boot.csv"))
+    fri = H[(H.region == "Dhaka") & (H.tracer == "PM25") & (H.day == "Fri")].sort_values("hour")
+    Pl = pd.read_csv(os.path.join(OUT, "hourly_profiles.csv"))
+    Pl = Pl[(Pl.region == "Dhaka") & (Pl.tracer == "PM25") & (Pl.day == "Fri")]
+    fri = fri.merge(Pl[["hour", "placebo_min", "placebo_max"]], on="hour")
+    E = pd.read_csv(os.path.join(OUT, "events_dependence.csv"))
     E = E[E.unit.astype(str).str.isdigit()].copy()
     E["hour"] = E.unit.astype(int)
+    E["pct"], E["lo"], E["hi"] = E.b_pct, E.lo_pct, E.hi_pct
     A = pd.read_csv(os.path.join(OUT, "aqi_by_shock.csv")).set_index("event")
     # dependence-aware intervals, as in Table 3
     Bd = pd.read_csv(os.path.join(OUT, "robust_bootstrap_days.csv"))

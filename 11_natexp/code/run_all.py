@@ -40,7 +40,9 @@ SEQUENCE = [
     # depend on the analyses above
     [cmd("blh_weighting.py", ROOT), cmd("aqi_scenarios.py", ROOT), cmd("events_checks.py", ROOT),
      cmd("events_tracers.py", ROOT), cmd("reconstruct.py", ROOT), cmd("mechanism.py", ROOT),
-     cmd("audit.py", ROOT), cmd("clock_check.py", ROOT)],
+     cmd("audit.py", ROOT), cmd("clock_check.py", ROOT), cmd("aqi_cap.py", ROOT)],
+    # bootstrap intervals for the hourly profiles (parallel)
+    [cmd("hourly_boot.py", ROOT)],
     [cmd("fig1_domain.py", ROOT), cmd("fig5_events.py"), cmd("figs_2_3.py"), cmd("figs_supp.py"),
      cmd("make_table3.py")],
 ]

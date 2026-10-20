@@ -329,10 +329,14 @@ def lockdown_checks(daily, outcomes):
 
 
 def block_rows(blocks, eid, yfun):
-    """Eid (event bootstrap) and lockdown (placebo-calibrated) intervals for each diurnal block."""
+    """Eid (event bootstrap) and lockdown (model interval, and the placebo-based sensitivity
+    interval) for each diurnal block, the daily mean and each clock hour.  The blocks and the
+    daily mean come first, in their original order, so their random draws are
+    unchanged; the hours follow."""
     usable = [t for t in eid if not (COVID[0] <= t <= COVID[1])]
     rows = []
-    units = sorted({u for v in blocks.values() for u in v})
+    allu = {u for v in blocks.values() for u in v}
+    units = sorted(u for u in allu if isinstance(u, str)) + sorted(u for u in allu if not isinstance(u, str))
     for u in units:
         fr = {x: v[u] for x, v in blocks.items() if u in v and x in DHAKA and x != "Savar"}
         fits = {x: eid_fit(s, eid, yfun) for x, s in fr.items()}
@@ -361,7 +365,8 @@ def block_rows(blocks, eid, yfun):
                     plac.append(pooled(f)[0])
             tot = np.sqrt(pse ** 2 + np.var(plac, ddof=1)) if len(plac) >= 2 else np.nan
             rows.append(dict(event="Lockdown", unit=u, b=pb, lo=pb - 1.96 * tot, hi=pb + 1.96 * tot, k=k,
-                             interval="model + placebo spread"))
+                             interval="placebo-based sensitivity", lo_model=pb - 1.96 * pse,
+                             hi_model=pb + 1.96 * pse))
     return pd.DataFrame(rows)
 
 
@@ -389,8 +394,7 @@ def main(root):
         for u, s in design_frames(h, metd, metb, hart, eid, eid_days):
             if u == "daily":
                 daily[st] = s
-            if u == "daily" or (isinstance(u, str) and " " in u):
-                blocks.setdefault(st, {})[u] = s
+            blocks.setdefault(st, {})[u] = s           # daily, the four blocks and each hour
     outcomes = {"PM25": lambda s: np.log(s.PM25.values), "AQI": lambda s: aqi_pm25(s.PM25.values)}
     E, ET = eid_checks(daily, eid, outcomes)
     for c in ("b", "lo", "hi"):
@@ -403,7 +407,7 @@ def main(root):
     L.to_csv(os.path.join(OUT, "lockdown_checks.csv"), index=False)
     LT.to_csv(os.path.join(OUT, "lockdown_trajectory.csv"), index=False)
     U = block_rows(blocks, eid, outcomes["PM25"])
-    for c in ("b", "lo", "hi"):
+    for c in ("b", "lo", "hi", "lo_model", "hi_model"):
         U[c + "_pct"] = pct(U[c])
     U.to_csv(os.path.join(OUT, "events_dependence.csv"), index=False)
     print(U.round(2).to_string(index=False))

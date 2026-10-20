@@ -36,13 +36,21 @@ BP = [(0.0, 9.0, 0, 50), (9.1, 35.4, 51, 100), (35.5, 55.4, 101, 150),
       (55.5, 125.4, 151, 200), (125.5, 225.4, 201, 300), (225.5, 325.4, 301, 500)]
 
 
-def aqi_pm25(c):
+def aqi_pm25(c, cap=True):
+    """Daily PM2.5 sub-index on the 2024 breakpoints, concentration truncated to 0.1, not
+    rounded.  Above 325.4 the index is set to 500 (cap=True, the main convention) or the top
+    segment is extended linearly (cap=False, a sensitivity check)."""
     c = np.floor(np.asarray(c, float) * 10) / 10
     out = np.full_like(c, np.nan)
     for lo, hi, ilo, ihi in BP:
         m = (c >= lo) & (c <= hi + 0.0999)
         out[m] = ilo + (ihi - ilo) / (hi - lo) * (np.minimum(c[m], hi) - lo)
-    out[c > 325.4] = 500
+    top = c > 325.4
+    if cap:
+        out[top] = 500
+    else:
+        lo, hi, ilo, ihi = BP[-1]
+        out[top] = ilo + (ihi - ilo) / (hi - lo) * (c[top] - lo)
     return out
 
 

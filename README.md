@@ -1,4 +1,4 @@
-# Dhaka's working week does not reach the night: data and code
+# Diurnal patterns of weekly activity and PM2.5 in Dhaka: data and code
 
 Data and code for the manuscript
 
@@ -59,7 +59,10 @@ python -I 11_natexp/code/run_all.py
 ```
 
 `run_all.py` rewrites every file in `11_natexp/out/` and logs each step to
-`11_natexp/out/run_all.log`. `11_natexp/code/verify_claims.py` re-derives every number in
+`11_natexp/out/run_all.log`; the full run takes about an hour on a 20-thread laptop. Rerun
+from a fresh copy of this release, 62 of the 63 result files were byte-identical and the 63rd,
+`robust_bootstrap_draws.csv.gz`, differed only in its gzip header timestamp.
+`11_natexp/code/verify_claims.py` re-derives every number in
 the manuscript from `11_natexp/out/`; it needs the manuscript source, which is not part of
 this deposit until publication.
 

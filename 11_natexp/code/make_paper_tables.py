@@ -34,13 +34,14 @@ def effects():
     units = ["night 00-05", "morning 06-11", "afternoon 12-17", "evening 18-23", "daily"]
     lines = [r"\begin{longtable}{L{1.4cm} L{1.3cm} L{1.0cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm}}",
              r"\caption{Pooled contrasts by diurnal block and shock, percent (95\% interval), and the change "
-             r"in the daily PM$_{2.5}$ AQI sub-index in index points. Every interval allows for the dependence "
-             r"between stations. Friday and Saturday: against the same block on Sunday to Wednesday, "
-             r"joint-date moving-block bootstrap (14-day blocks, 400 replicates). Eid: against the "
-             r"surrounding days, with intervals from resampling the 11 usable events. Lockdown: against "
-             r"the year, month and weather expectation, with the model interval widened by the spread of "
-             r"the same design in placebo windows of four other years. The night block is 00--05\,h of "
-             r"the calendar day, so a Friday's night block is Thursday night."
+             r"in the daily PM$_{2.5}$ AQI sub-index in index points. Friday and Saturday: against the same "
+             r"block on Sunday to Wednesday, joint-date moving-block bootstrap (14-day blocks, 400 "
+             r"replicates). Eid: against the surrounding days, with intervals from resampling the 11 usable "
+             r"events. Lockdown: against the year, month and weather expectation; first the model interval, "
+             r"then a placebo-based sensitivity interval that adds the variance of the same design's estimates "
+             r"in pseudo-lockdown windows of four other years to the model variance (a sensitivity check "
+             r"with four placebo years, not a calibrated confidence interval). The night block is "
+             r"00--05\,h of the calendar day, so a Friday's night block is Thursday night."
              r"}\label{tab:effects}\\",
              r"\toprule",
              r"\textbf{Shock} & \textbf{Region} & \textbf{Tracer} & \textbf{Night} & \textbf{Morning} & "
@@ -52,7 +53,10 @@ def effects():
              r"\midrule\endhead",
              r"\bottomrule\endfoot"]
     for _, r in T.iterrows():
-        cells = [r.shock, r.region.replace("national", "National"),
+        lab = r.shock
+        if r.shock == "Lockdown":
+            lab += r"\newline {\scriptsize(%s)}" % ("model" if "model interval" in r.interval else "placebo-based")
+        cells = [lab, r.region.replace("national", "National"),
                  {"PM2.5": r"PM$_{2.5}$", "NOx": r"NO$_x$"}.get(r.tracer, r.tracer)]
         cells += [tex(r[u]).replace(" [", r"\newline [") for u in units]
         a = r["daily AQI (points)"]
@@ -175,6 +179,7 @@ def sensitivity():
     labs = [("cluster", "Week-clustered errors"), ("nomet", "No meteorology"), ("y2019_21", "2019--2021 only"),
             ("y2022_25", "2022--2025 only"), ("dry", "Dry season (Nov--Apr)"), ("wet", "Wet season (May--Oct)"),
             ("no_imputed", "Without the gap-filled boundary-layer months"),
+            ("no_pandemic", "Without 26 March 2020 -- December 2021 (pandemic restrictions)"),
             ("balanced", "Balanced dates ($\\geq$70\\% of stations)"), ("noembassy", "Without the Embassy"),
             ("screen_none", "No station screens"), ("screen_strict", "Stricter screens")]
     for v, lab in labs:

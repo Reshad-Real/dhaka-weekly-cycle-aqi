@@ -39,7 +39,10 @@ DAYS = {3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun", 0: "Mon", 1: "Tue", 2: "Wed"}
 BLK_OF = {h: b for b, hs in BLOCKS.items() for h in hs}
 
 
-def main(root):
+def hourly_frames(root):
+    """{(station, region, tracer, hour): design frame} for every screened station-tracer and
+    clock hour: log outcome (or the log NOx/CO ratio), the hour's block meteorology, day of
+    week and year-month, event days removed.  Shared with hourly_boot.py."""
     metd, metb = met_daily(root)
     hart, eid, eid_days = calendars(root)
     ok_pm, gas_ok, flat = screens()
@@ -51,7 +54,7 @@ def main(root):
     allh["NOX_CO"] = np.log(allh["NOX"].where(allh["NOX"] > 0)) - np.log(allh["CO"].where(allh["CO"] > 0))
 
     ev_days = set(hart) | set(eid_days)
-    rows = []
+    frames = {}
     for st, h in allh.groupby("station"):
         reg = "Dhaka" if st in DHAKA else "national"
         h = h.copy()
@@ -83,12 +86,18 @@ def main(root):
                 s = s.dropna(subset=["ly"] + rb.METC).sort_index()
                 if len(s) < 300:
                     continue
-                for dw, name in DAYS.items():
-                    r = rb.fit(s, dw)
-                    if r:
-                        rows.append(dict(station=st, region=reg, tracer=y, hour=hh, day=name,
-                                         b=r[0], se=r[1], n=r[2]))
-        print("done", st)
+                frames[(st, reg, y, hh)] = s
+    return frames
+
+
+def main(root):
+    rows = []
+    for (st, reg, y, hh), s in hourly_frames(root).items():
+        for dw, name in DAYS.items():
+            r = rb.fit(s, dw)
+            if r:
+                rows.append(dict(station=st, region=reg, tracer=y, hour=hh, day=name,
+                                 b=r[0], se=r[1], n=r[2]))
     S = pd.DataFrame(rows)
     S.to_csv(os.path.join(OUT, "hourly_profiles_station.csv"), index=False)
     P = []

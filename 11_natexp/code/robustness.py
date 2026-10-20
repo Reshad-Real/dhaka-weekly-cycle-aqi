@@ -13,9 +13,14 @@ This script re-estimates the result several ways:
   noembassy   Dhaka pool without the US Embassy monitor
   loo_<site>  Dhaka pool leaving one station out
   no_imputed  without the gap-filled boundary-layer months (Jan-Jun 2024)
+  no_pandemic without 26 March 2020 - 31 December 2021, the lockdown and the later pandemic
+              restrictions (including the nationwide lockdowns of 2021)
   balanced    only dates on which >= 70% of the region's stations report
   screen_none, screen_strict   the same fits with no station screens, and with stricter
               thresholds (PM2.5 r >= 0.85; gas rho >= 0.3; any analyzer with CV < 0.2 dropped)
+  screen_behaviour  the gas screen judged on instrument behaviour alone: an analyzer is
+              dropped when its daily means barely vary (CV < 0.15), without asking whether it
+              co-varies with PM2.5
   bootstrap   joint-date moving-block bootstrap (14-day blocks resampled identically for
               every station, B = 400), which keeps the cross-station dependence; the
               pooled estimate uses fixed inverse-variance weights from the main fit
@@ -105,6 +110,7 @@ SCREEN_RULES = {
     "main": dict(r=0.6, lag=1, rho=0.2, cv=0.15, r_fault=0.1),
     "screen_none": dict(r=None, lag=None, rho=None, cv=None, r_fault=None),
     "screen_strict": dict(r=0.85, lag=1, rho=0.3, cv=0.2, r_fault=None),
+    "screen_behaviour": dict(r=0.6, lag=1, rho=0.2, cv=0.15, r_fault=None),
 }
 
 
@@ -187,6 +193,8 @@ def main(root):
         "wet": dict(sel=lambda s: s[s.index.month.isin([5, 6, 7, 8, 9, 10])]),
         # without the 4,368 gap-filled boundary-layer hours (1 January - 30 June 2024)
         "no_imputed": dict(sel=lambda s: s[(s.index < "2024-01-01") | (s.index > "2024-06-30")]),
+        # without the lockdown and every later pandemic restriction (2021 had nationwide lockdowns)
+        "no_pandemic": dict(sel=lambda s: s[(s.index < "2020-03-26") | (s.index > "2021-12-31")]),
     }
     est_all = []
     for name, v in variants.items():
@@ -225,7 +233,7 @@ def main(root):
     est_all.append(est)
     print("variant balanced      %d station estimates" % len(est))
     # screening thresholds: the same Friday and Saturday fits on other station sets
-    for name in ("screen_none", "screen_strict"):
+    for name in ("screen_none", "screen_strict", "screen_behaviour"):
         rows = []
         for key, s in frames_all.items():
             if name not in rules_of[key]:
@@ -244,7 +252,7 @@ def main(root):
     EST.to_csv(os.path.join(OUT, "robust_station_estimates.csv"), index=False)
 
     tabs = []
-    for name in list(variants) + ["balanced", "screen_none", "screen_strict"]:
+    for name in list(variants) + ["balanced", "screen_none", "screen_strict", "screen_behaviour"]:
         tabs.append(pooled_table(EST[EST.variant == name], name))
     main = EST[EST.variant == "main"]
     tabs.append(pooled_table(main[main.station != "US Embassy"], "noembassy"))
