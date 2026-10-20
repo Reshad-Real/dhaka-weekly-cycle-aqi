@@ -2,8 +2,10 @@
 number in them is transcribed by hand.
 
   paper/tables/tab_effects.tex     Table 3, from out/table3.csv
-  paper/tables/tab_scenarios.tex   Table 4, from out/aqi_scenarios.csv and
+  paper/tables/tab_scenarios.tex   Table 6, from out/aqi_scenarios.csv and
                                    out/aqi_scenarios_stations.csv
+  paper/tables/tab_stations.tex    Table 2, stations and PM2.5 coverage by year
+  paper/tables/tab_sensitivity.tex Table 5, robustness of the Dhaka Friday contrast
   paper/tables/tab_screening.tex   Table S2, from out/cams_validation.csv
 Usage: python -I make_paper_tables.py
 """
@@ -31,12 +33,14 @@ def effects():
     T = pd.read_csv(os.path.join(OUT, "table3.csv"))
     units = ["night 00-05", "morning 06-11", "afternoon 12-17", "evening 18-23", "daily"]
     lines = [r"\begin{longtable}{L{1.4cm} L{1.3cm} L{1.0cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm}}",
-             r"\caption{Pooled effects by diurnal block and shock, percent (95\% interval), and the change "
-             r"in the daily AQI in index points. Friday: against the same block on Sunday to Wednesday, "
-             r"joint-date block bootstrap. Saturday: same contrast, random-effects pooling. Eid: against "
-             r"the surrounding days. Lockdown: against the year, month and weather expectation. "
-             r"Random-effects intervals treat stations as independent and are optimistic. The night "
-             r"block is 00--05\,h of the calendar day, so a Friday's night block is Thursday night."
+             r"\caption{Pooled contrasts by diurnal block and shock, percent (95\% interval), and the change "
+             r"in the daily PM$_{2.5}$ AQI sub-index in index points. Every interval allows for the dependence "
+             r"between stations. Friday and Saturday: against the same block on Sunday to Wednesday, "
+             r"joint-date moving-block bootstrap (14-day blocks, 400 replicates). Eid: against the "
+             r"surrounding days, with intervals from resampling the 11 usable events. Lockdown: against "
+             r"the year, month and weather expectation, with the model interval widened by the spread of "
+             r"the same design in placebo windows of four other years. The night block is 00--05\,h of "
+             r"the calendar day, so a Friday's night block is Thursday night."
              r"}\label{tab:effects}\\",
              r"\toprule",
              r"\textbf{Shock} & \textbf{Region} & \textbf{Tracer} & \textbf{Night} & \textbf{Morning} & "
@@ -48,7 +52,8 @@ def effects():
              r"\midrule\endhead",
              r"\bottomrule\endfoot"]
     for _, r in T.iterrows():
-        cells = [r.shock, r.region.replace("national", "National"), r.tracer.replace("PM2.5", r"PM$_{2.5}$")]
+        cells = [r.shock, r.region.replace("national", "National"),
+                 {"PM2.5": r"PM$_{2.5}$", "NOx": r"NO$_x$"}.get(r.tracer, r.tracer)]
         cells += [tex(r[u]).replace(" [", r"\newline [") for u in units]
         a = r["daily AQI (points)"]
         cells.append(tex(a).replace(" [", r"\newline [") if isinstance(a, str) and a.strip() else "")
@@ -62,44 +67,133 @@ def scenarios():
     S = pd.read_csv(os.path.join(OUT, "aqi_scenarios.csv")).set_index("scenario")
     St = pd.read_csv(os.path.join(OUT, "aqi_scenarios_stations.csv"))
     rng = St.groupby("scenario").d_mean_aqi.agg(["min", "max"])
-    names = [("rest_day", "Every day a rest day (Friday 06\\,h to Saturday 05\\,h profile)"),
-             ("cut_allday", "Friday-afternoon-sized cut at all 24 hours"),
+    names = [("rest_day", "Every day takes the rest-day profile (Friday morning to evening, then the night after Friday)"),
+             ("rest_day_calendar", "The same with the calendar-Friday profile (Thursday night included)"),
+             ("cut_allday", "Friday-afternoon-sized concentration cut at all 24 hours"),
              ("cut_day_only", "The same cut at 12--23\\,h only"),
-             ("cut_night_only", "The same cut at 00--11\\,h only"),
-             ("eid_like", "Eid hourly profile on every day"),
-             ("lockdown_like", "Lockdown hourly profile on every day")]
+             ("cut_night_only", "The same cut at 00--11\\,h only")]
     b = S.loc["baseline"]
-    lines = [r"\begin{longtable}{L{4.6cm} C{1.5cm} C{1.9cm} C{1.4cm} C{1.4cm} C{1.4cm} C{2.4cm}}",
-             r"\caption{What activity reductions of the observed kinds would buy, applied to the US "
-             r"Embassy hourly record, January 2019 to March 2025: change in annual mean PM$_{2.5}$, in the mean daily AQI "
-             r"and in days per year at or above three index thresholds. Baseline: mean PM$_{2.5}$ "
-             + num(b.mean_pm, 1, False) + r"\,$\mu$g\,m$^{-3}$, mean AQI " + num(b.mean_aqi, 1, False)
-             + r", " + num(b.days150, 0, False) + r", " + num(b.days200, 0, False) + r" and "
-             + num(b.days300, 0, False) + r" days per year at or above 150, 200 and 300. The last "
-             r"column gives the range of the mean-AQI change over the " + NUM[St.station.nunique()]
-             + r" screened Dhaka CAMS "
-             r"stations, 2019--2024.}\label{tab:scenarios}\\",
-             r"\toprule",
-             r"\textbf{Scenario} & \textbf{PM$_{2.5}$ (\%)} & \textbf{AQI (points)} & \textbf{Days $\geq$150} & "
-             r"\textbf{Days $\geq$200} & \textbf{Days $\geq$300} & \textbf{AQI, CAMS range} \\",
-             r"\midrule\endfirsthead",
-             r"\toprule",
-             r"\textbf{Scenario} & \textbf{PM$_{2.5}$ (\%)} & \textbf{AQI (points)} & \textbf{Days $\geq$150} & "
-             r"\textbf{Days $\geq$200} & \textbf{Days $\geq$300} & \textbf{AQI, CAMS range} \\",
-             r"\midrule\endhead",
+    hdr = (r"\textbf{Scenario} & \textbf{PM$_{2.5}$ (\%)} & \textbf{Sub-index (points)} & "
+           r"\textbf{Days $>$150} & \textbf{Days $>$200} & \textbf{Days $>$300} & \textbf{CAMS range} \\")
+    lines = [r"\begin{longtable}{L{4.4cm} C{1.7cm} C{1.9cm} C{1.6cm} C{1.6cm} C{1.6cm} C{2.0cm}}",
+             r"\caption{Illustrative scenarios: concentration reductions shaped like the observed weekly "
+             r"pattern, applied to a working-day counterfactual of the US Embassy hourly record (Thursday, "
+             r"Friday and Saturday hours converted to their Sunday--Wednesday equivalents; Eid, lockdown and "
+             r"strike days left out), January 2019 to March 2025. Change in mean PM$_{2.5}$, in the mean daily "
+             r"PM$_{2.5}$ AQI sub-index and in days per year above three category boundaries, with 95\% "
+             r"intervals from the joint-date bootstrap draws of the block effects. These rescale "
+             r"concentrations; they are not forecasts of a policy and not equivalent emissions cuts. "
+             r"Baseline: mean PM$_{2.5}$ " + num(b.mean_pm, 1, False) + r"\,$\mu$g\,m$^{-3}$, mean sub-index "
+             + num(b.mean_aqi, 1, False) + r", and " + num(b.days150, 0, False) + r", " + num(b.days200, 0, False)
+             + r" and " + num(b.days300, 0, False) + r" days per year above 150, 200 and 300. Last column: "
+             r"range of the sub-index change over the " + NUM[St.station.nunique()]
+             + r" screened Dhaka CAMS stations, 2019--2024.}\label{tab:scenarios}\\",
+             r"\toprule", hdr, r"\midrule\endfirsthead", r"\toprule", hdr, r"\midrule\endhead",
              r"\bottomrule\endfoot"]
+
+    def iv(r, col):
+        return num(r[col]) + r"\newline {\scriptsize[%s, %s]}" % (num(r[col + "_lo"]), num(r[col + "_hi"]))
     for key, lab in names:
         r = S.loc[key]
         cams = ("%s to %s" % (num(rng.loc[key, "min"]), num(rng.loc[key, "max"]))) if key in rng.index else "--"
-        extra = ""
-        if key == "rest_day":
-            extra = r"\newline (%s to %s)" % (num(S.loc["rest_day_lo", "d_mean_aqi"]),
-                                              num(S.loc["rest_day_hi", "d_mean_aqi"]))
-        lines.append(" & ".join([lab, num(r.d_pm_pct), num(r.d_mean_aqi) + extra, num(r.d_days150),
-                                 num(r.d_days200), num(r.d_days300), cams]) + r" \\")
+        lines.append(" & ".join([lab, iv(r, "d_pm_pct"), iv(r, "d_mean_aqi"), iv(r, "d_days150"),
+                                 iv(r, "d_days200"), iv(r, "d_days300"), cams]) + r" \\")
     lines.append(r"\end{longtable}")
     lines = [r"\begingroup\small"] + lines + [r"\endgroup"]
     open(os.path.join(TAB, "tab_scenarios.tex"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+
+
+def stations():
+    """Compact station table: region, host, PM2.5 coverage by year, and what each is used for."""
+    import sys
+    sys.path.insert(0, HERE)
+    from cams_shocks import embassy_hourly
+    from screens import gas_allowed, screens
+    cov = pd.read_csv(os.path.join(OUT, "coverage_station_year.csv"))
+    loc = pd.read_csv(os.path.join(HERE, "..", "data", "station_locations.csv")).set_index("station")
+    ok_pm, gas_ok, flat = screens()
+    dh = ["BARC", "Darussalam", "DoE", "Savar", "Gazipur", "Narayanganj", "Narsingdi"]
+    emb = embassy_hourly(os.path.join(HERE, "..", ".."))
+    emb = emb[(emb.time >= "2019-01-01") & (emb.time < "2025-01-01")].drop_duplicates("time")
+    years = list(range(2019, 2025))
+    hours = {y: (pd.Timestamp("%d-01-01" % (y + 1)) - pd.Timestamp("%d-01-01" % y)).days * 24 for y in years}
+    ecov = emb.groupby(emb.time.dt.year).size()
+    pos = lambda st: (r"%.3f\,N\newline %.3f\,E" % (loc.loc[st, "lat"], loc.loc[st, "lon"])) if st in loc.index else "--"
+    rows = [["US Embassy", "Dhaka", loc.loc["US Embassy", "host"].split(",")[0], pos("US Embassy")]
+            + ["%d" % round(100 * ecov.get(y, 0) / hours[y]) for y in years] + ["PM$_{2.5}$ (reference)"]]
+    order = dh + sorted(s for s in cov.station.unique() if s not in dh)
+    for st in order:
+        c = cov[cov.station == st].set_index("year")
+        reg = "Dhaka" if st in dh else "National"
+        use = []
+        if (reg == "National") or st in ok_pm:
+            use.append("PM$_{2.5}$")
+        for g, lab in (("NOX", "NO$_x$"), ("CO", "CO")):
+            if gas_allowed(st, g, "Dhaka" if st in dh else "national", gas_ok, flat):
+                use.append(lab)
+        host = loc.loc[st, "host"].split(",")[0] if st in loc.index else ""
+        rows.append([st, reg, host, pos(st)] + ["%d" % round(c.loc[y, "PM25"]) if y in c.index else "0" for y in years]
+                    + [", ".join(use) if use else "none"])
+    hdr = (r"\textbf{Station} & \textbf{Region} & \textbf{Host} & \textbf{Position} & "
+           + " & ".join(r"\textbf{%d}" % y for y in years) + r" & \textbf{Used for} \\")
+    lines = [r"\begin{longtable}{L{2.3cm} L{1.2cm} L{2.9cm} L{1.4cm} " + "C{0.6cm} " * 6 + r"L{2.2cm}}",
+             r"\caption{Monitoring stations: host institution, position (World Air Quality Index listing; the "
+             r"US Embassy from OpenStreetMap), valid PM$_{2.5}$ hours by year (percent of the year, after quality "
+             r"control) and the analyses each enters. No siting classification of the CAMS stations is "
+             r"published. Dhaka-region PM$_{2.5}$ is screened against the US Embassy reference; gas analyzers are "
+             r"screened against TROPOMI NO$_2$ in the Dhaka region and for faults everywhere "
+             r"(Section~\ref{sec:screening}). Exclusions by rule, station and year are in "
+             r"Table~\ref{S-tab:s-qc-station}; coverage of the gases in Table~\ref{S-tab:s-coverage-year}."
+             r"}\label{tab:stations}\\",
+             r"\toprule", hdr, r"\midrule\endfirsthead", r"\toprule", hdr, r"\midrule\endhead", r"\bottomrule\endfoot"]
+    lines += [" & ".join(r) + r" \\" for r in rows]
+    lines.append(r"\end{longtable}")
+    lines = [r"\begingroup\footnotesize"] + lines + [r"\endgroup"]
+    open(os.path.join(TAB, "tab_stations.tex"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+
+
+def sensitivity():
+    """Main-paper summary of robustness and sensitivity for the Dhaka Friday PM2.5 contrast."""
+    P = pd.read_csv(os.path.join(OUT, "robust_pooled.csv"))
+    B = pd.read_csv(os.path.join(OUT, "robust_bootstrap_days.csv"))
+    BL = pd.read_csv(os.path.join(OUT, "robust_bootstrap_blocklen.csv"))
+    q = P[(P.region == "Dhaka") & (P.tracer == "PM25") & (P.day == "Fri")]
+    blocks = ["afternoon 12-17", "evening 18-23", "daily"]
+
+    def boot_row(lab, tab):
+        g = tab.set_index("block")
+        return [lab, str(int(g.k.max())) if "k" in g else "7"] + [
+            num(g.loc[b, "pct"]) + r"\newline {\scriptsize[%s, %s]}" % (num(g.loc[b, "lo_pct"]), num(g.loc[b, "hi_pct"]))
+            for b in blocks]
+
+    rows = []
+    fb = B[(B.day == "Fri") & (B.region == "Dhaka") & (B.tracer == "PM25")]
+    rows.append(boot_row("Main, joint-date bootstrap (14-day blocks)", fb))
+    for blen in (7, 28):
+        rows.append(boot_row("Bootstrap, %d-day blocks" % blen,
+                             BL[(BL.block_days == blen) & (BL.region == "Dhaka")]))
+    labs = [("cluster", "Week-clustered errors"), ("nomet", "No meteorology"), ("y2019_21", "2019--2021 only"),
+            ("y2022_25", "2022--2025 only"), ("dry", "Dry season (Nov--Apr)"), ("wet", "Wet season (May--Oct)"),
+            ("no_imputed", "Without the gap-filled boundary-layer months"),
+            ("balanced", "Balanced dates ($\\geq$70\\% of stations)"), ("noembassy", "Without the Embassy"),
+            ("screen_none", "No station screens"), ("screen_strict", "Stricter screens")]
+    for v, lab in labs:
+        g = q[q.variant == v].set_index("block")
+        rows.append([lab, str(int(g.k.max()))] + ["%s {\\scriptsize($z$=%s)}" % (num(g.loc[b, "pct"]),
+                                                                                  num(g.loc[b, "z"], 1))
+                                                    for b in blocks])
+    hdr = r"\textbf{Variant} & \textbf{$k$} & \textbf{Afternoon} & \textbf{Evening} & \textbf{Daily} \\"
+    lines = [r"\begin{longtable}{L{6.0cm} C{0.6cm} C{2.6cm} C{2.6cm} C{2.6cm}}",
+             r"\caption{Robustness of the Dhaka-region Friday PM$_{2.5}$ contrast, percent. Bootstrap rows: "
+             r"95\% interval from 400 joint-date resamples with the block length shown. Other rows: "
+             r"random-effects pooling, $z$-statistic in parentheses. $k$: stations. The full set, with the "
+             r"national stations and each station left out, is in Table~\ref{S-tab:s-robust}; the gases under "
+             r"each screen in Table~\ref{S-tab:s-gas-screens}.}\label{tab:sensitivity}\\",
+             r"\toprule", hdr, r"\midrule\endfirsthead", r"\toprule", hdr, r"\midrule\endhead", r"\bottomrule\endfoot"]
+    lines += [" & ".join(r) + r" \\" for r in rows]
+    lines.append(r"\end{longtable}")
+    lines = [r"\begingroup\small"] + lines + [r"\endgroup"]
+    open(os.path.join(TAB, "tab_sensitivity.tex"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
 
 
 def screening():
@@ -140,5 +234,7 @@ def screening():
 if __name__ == "__main__":
     effects()
     scenarios()
+    stations()
+    sensitivity()
     # screening() is superseded by Table S3 (make_supp_tables.py) and no longer called
     print("wrote", sorted(os.listdir(TAB)))

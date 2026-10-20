@@ -189,7 +189,7 @@ def main(root):
     ax[2].set_yticklabels(["all year", "dry (Nov-Apr)", "wet (May-Oct)"])
     ax[2].invert_yaxis()
     ax[2].set_xlabel("Friday effect on daily PM2.5 (%)")
-    ax[2].set_title("(c) Blocks add up to the daily null", loc="left", fontsize=9)
+    ax[2].set_title("(c) Accounting check", loc="left", fontsize=9)
     ax[2].legend(frameon=False, fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
     ax[2].spines[["top", "right"]].set_visible(False)
     fig.tight_layout(rect=(0, 0, 1, 0.93))

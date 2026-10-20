@@ -22,7 +22,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from cams_shocks import COVID, calendars, embassy_hourly, met_daily  # noqa: E402
+from cams_shocks import COVID, TROPOMI_MIN_COVERAGE, calendars, embassy_hourly, met_daily, tropomi_daily  # noqa: E402
 from cams_pooled import DHAKA, dl_pool  # noqa: E402
 from events_hourly import METC, eid_effect, lockdown_effect, ols_fe, weekly_effect  # noqa: E402
 from screens import gas_allowed, screens  # noqa: E402
@@ -65,16 +65,16 @@ def main(root):
                "Strike days": lambda s: strike_effect(s, ly)}
     rows = []
 
-    tr = pd.read_csv(os.path.join(root, "02_data", "raw", "tropomi_no2_dhaka_daily.csv"), parse_dates=["date"])
-    tr = tr.set_index("date")["tropospheric_NO2_column_number_density_mean"] * 1e6
-    tr = tr.loc["2019-01-01":"2025-12-31"]
-    s = frame(tr, metd, hart, eid_days)
-    for name, fn in designs.items():
-        r = fn(s)
-        if r:
-            rows.append(dict(shock=name, outcome="TROPOMI NO2", region="domain", k=1, b=r[0], se=r[1], n=r[2],
-                             n_event=int({"Eid": s.eid, "Lockdown": s.covid, "Strike days": s.hart}.get(
-                                 name, (s.dow == (4 if name == "Friday" else 5)).astype(int)).sum())))
+    # main: days with >= 50% of the domain observed; sensitivity: every day with any value
+    for outcome, cov in (("TROPOMI NO2", TROPOMI_MIN_COVERAGE), ("TROPOMI NO2 any coverage", 0.0)):
+        tr = tropomi_daily(root, cov).loc["2019-01-01":"2025-12-31"]
+        s = frame(tr, metd, hart, eid_days)
+        for name, fn in designs.items():
+            r = fn(s)
+            if r:
+                rows.append(dict(shock=name, outcome=outcome, region="domain", k=1, b=r[0], se=r[1], n=r[2],
+                                 n_event=int({"Eid": s.eid, "Lockdown": s.covid, "Strike days": s.hart}.get(
+                                     name, (s.dow == (4 if name == "Friday" else 5)).astype(int)).sum())))
 
     ok_pm, gas_ok, flat = screens()
     cams = pd.read_csv(os.path.join(DATA, "cams_hourly_qc.csv.gz"), parse_dates=["time"])

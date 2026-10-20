@@ -19,6 +19,9 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "data")
 OUT = os.path.join(HERE, "..", "out")
+sys.path.insert(0, HERE)
+from cams_shocks import tropomi_daily  # noqa: E402
+
 DHAKA = ["BARC", "Darussalam", "DoE", "Savar", "Gazipur", "Narayanganj", "Narsingdi"]
 
 
@@ -29,9 +32,7 @@ def main(root):
     e = e.rename(columns={"Date (LT)": "time", "Raw Conc.": "pm", "QC Name": "qc"})
     e["time"] = pd.to_datetime(e["time"], format="%Y-%m-%d %I:%M %p")
     e = e[(e.qc == "Valid") & (e.pm > 0)].drop_duplicates("time").set_index("time")["pm"]
-    tr = pd.read_csv(os.path.join(root, "02_data", "raw", "tropomi_no2_dhaka_daily.csv"),
-                     parse_dates=["date"]).set_index("date")[
-        "tropospheric_NO2_column_number_density_mean"]
+    tr = tropomi_daily(root)            # days with >= 50% of the domain observed
     out = []
     for st in DHAKA:
         h = cams[cams.station == st].drop_duplicates("time").set_index("time").sort_index()

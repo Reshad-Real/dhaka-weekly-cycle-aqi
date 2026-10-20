@@ -1,0 +1,321 @@
+rule,station,year,pollutant,n
+Q4 duplicate,Agrabad CDA Chattogram,2013,all,1
+Q4 duplicate,Agrabad CDA Chattogram,2017,all,478
+Q4 duplicate,Agrabad CDA Chattogram,2018,all,645
+Q4 duplicate,Agrabad CDA Chattogram,2020,all,2
+Q4 duplicate,BARC,2013,all,1
+Q4 duplicate,BARC,2017,all,478
+Q4 duplicate,BARC,2018,all,645
+Q4 duplicate,BARC,2020,all,3
+Q4 duplicate,BTV Chattogram,2013,all,1
+Q4 duplicate,BTV Chattogram,2017,all,478
+Q4 duplicate,BTV Chattogram,2018,all,645
+Q4 duplicate,BTV Chattogram,2020,all,1
+Q4 duplicate,Barishal,2013,all,1
+Q4 duplicate,Barishal,2017,all,478
+Q4 duplicate,Barishal,2018,all,645
+Q4 duplicate,Barishal,2020,all,2
+Q4 duplicate,Cumilla,2020,all,1
+Q4 duplicate,Darussalam,2013,all,1
+Q4 duplicate,Darussalam,2017,all,478
+Q4 duplicate,Darussalam,2018,all,645
+Q4 duplicate,Darussalam,2020,all,2
+Q4 duplicate,Gazipur,2013,all,1
+Q4 duplicate,Gazipur,2017,all,478
+Q4 duplicate,Gazipur,2018,all,645
+Q4 duplicate,Gazipur,2020,all,2
+Q4 duplicate,Mymensingh,2020,all,2
+Q4 duplicate,Narayanganj,2013,all,1
+Q4 duplicate,Narayanganj,2017,all,478
+Q4 duplicate,Narayanganj,2018,all,645
+Q4 duplicate,Narayanganj,2020,all,2
+Q4 duplicate,Savar,2020,all,2
+Q4 duplicate,Sylhet,2013,all,1
+Q4 duplicate,Sylhet,2017,all,478
+Q4 duplicate,Sylhet,2018,all,645
+Q4 duplicate,Sylhet,2020,all,2
+Q1 range,Agrabad CDA Chattogram,2020,PM25,1
+Q1 range,BTV Chattogram,2020,PM25,4
+Q1 range,Gazipur,2024,PM25,1
+Q1 range,Mymensingh,2021,PM25,2
+Q1 range,Narayanganj,2024,PM25,79
+Q1 range,Savar,2020,PM25,57
+Q1 range,Savar,2021,PM25,12
+Q1 range,Savar,2024,PM25,7
+Q1 range,Sylhet,2024,PM25,12
+Q2 stuck run,Agrabad CDA Chattogram,2014,PM25,6
+Q2 stuck run,Agrabad CDA Chattogram,2015,PM25,13
+Q2 stuck run,Agrabad CDA Chattogram,2016,PM25,7
+Q2 stuck run,Agrabad CDA Chattogram,2017,PM25,7
+Q2 stuck run,BARC,2023,PM25,130
+Q2 stuck run,BARC,2024,PM25,181
+Q2 stuck run,BTV Chattogram,2014,PM25,12
+Q2 stuck run,BTV Chattogram,2020,PM25,11
+Q2 stuck run,BTV Chattogram,2021,PM25,27
+Q2 stuck run,BTV Chattogram,2023,PM25,129
+Q2 stuck run,BTV Chattogram,2024,PM25,194
+Q2 stuck run,Cumilla,2022,PM25,15
+Q2 stuck run,Cumilla,2024,PM25,112
+Q2 stuck run,Darussalam,2021,PM25,85
+Q2 stuck run,DoE,2023,PM25,240
+Q2 stuck run,Gazipur,2019,PM25,31
+Q2 stuck run,Gazipur,2024,PM25,1127
+Q2 stuck run,Khulna,2024,PM25,173
+Q2 stuck run,Mymensingh,2020,PM25,56
+Q2 stuck run,Mymensingh,2021,PM25,376
+Q2 stuck run,Mymensingh,2023,PM25,283
+Q2 stuck run,Mymensingh,2024,PM25,204
+Q2 stuck run,Narayanganj,2016,PM25,8
+Q2 stuck run,Narayanganj,2018,PM25,8
+Q2 stuck run,Narayanganj,2024,PM25,348
+Q2 stuck run,Narsingdi,2023,PM25,44
+Q2 stuck run,Narsingdi,2024,PM25,91
+Q2 stuck run,Rajshahi,2023,PM25,284
+Q2 stuck run,Rajshahi,2024,PM25,9
+Q2 stuck run,Rangpur,2023,PM25,209
+Q2 stuck run,Rangpur,2024,PM25,229
+Q2 stuck run,Savar,2020,PM25,110
+Q2 stuck run,Savar,2023,PM25,11
+Q2 stuck run,Savar,2024,PM25,51
+Q2 stuck run,Sylhet,2018,PM25,7
+Q2 stuck run,Sylhet,2024,PM25,1086
+Q1 range,Agrabad CDA Chattogram,2020,PM10,1
+Q1 range,Agrabad CDA Chattogram,2021,PM10,1
+Q1 range,BARC,2020,PM10,1
+Q1 range,Mymensingh,2021,PM10,1
+Q1 range,Narayanganj,2020,PM10,1
+Q1 range,Savar,2020,PM10,85
+Q1 range,Savar,2021,PM10,7
+Q1 range,Savar,2024,PM10,413
+Q2 stuck run,Agrabad CDA Chattogram,2015,PM10,13
+Q2 stuck run,BARC,2023,PM10,92
+Q2 stuck run,BARC,2024,PM10,81
+Q2 stuck run,BTV Chattogram,2013,PM10,69
+Q2 stuck run,BTV Chattogram,2014,PM10,18
+Q2 stuck run,BTV Chattogram,2015,PM10,42
+Q2 stuck run,BTV Chattogram,2021,PM10,12
+Q2 stuck run,Barishal,2014,PM10,6
+Q2 stuck run,Barishal,2021,PM10,64
+Q2 stuck run,Cumilla,2023,PM10,261
+Q2 stuck run,Cumilla,2024,PM10,244
+Q2 stuck run,Darussalam,2021,PM10,121
+Q2 stuck run,Khulna,2024,PM10,100
+Q2 stuck run,Mymensingh,2021,PM10,327
+Q2 stuck run,Mymensingh,2023,PM10,79
+Q2 stuck run,Mymensingh,2024,PM10,130
+Q2 stuck run,Narayanganj,2013,PM10,6
+Q2 stuck run,Narayanganj,2016,PM10,8
+Q2 stuck run,Narayanganj,2024,PM10,392
+Q2 stuck run,Narsingdi,2024,PM10,72
+Q2 stuck run,Rajshahi,2022,PM10,7
+Q2 stuck run,Rajshahi,2023,PM10,388
+Q2 stuck run,Rangpur,2022,PM10,7
+Q2 stuck run,Rangpur,2023,PM10,184
+Q2 stuck run,Rangpur,2024,PM10,199
+Q2 stuck run,Savar,2022,PM10,207
+Q2 stuck run,Savar,2023,PM10,35
+Q2 stuck run,Savar,2024,PM10,164
+Q2 stuck run,Sylhet,2012,PM10,10
+Q2 stuck run,Sylhet,2018,PM10,7
+Q2 stuck run,Sylhet,2024,PM10,632
+Q1 range,Narayanganj,2024,NOX,100
+Q1 range,Savar,2024,NOX,66
+Q1 range,Sylhet,2024,NOX,352
+Q2 stuck run,Agrabad CDA Chattogram,2015,NOX,12
+Q2 stuck run,Agrabad CDA Chattogram,2017,NOX,6
+Q2 stuck run,BARC,2021,NOX,12
+Q2 stuck run,BARC,2022,NOX,16
+Q2 stuck run,BARC,2023,NOX,16
+Q2 stuck run,BTV Chattogram,2024,NOX,6
+Q2 stuck run,Barishal,2024,NOX,20
+Q2 stuck run,DoE,2024,NOX,140
+Q2 stuck run,Gazipur,2023,NOX,226
+Q2 stuck run,Gazipur,2024,NOX,1200
+Q2 stuck run,Mymensingh,2020,NOX,36
+Q2 stuck run,Mymensingh,2021,NOX,297
+Q2 stuck run,Mymensingh,2023,NOX,6
+Q2 stuck run,Mymensingh,2024,NOX,118
+Q2 stuck run,Narayanganj,2016,NOX,7
+Q2 stuck run,Narayanganj,2019,NOX,19
+Q2 stuck run,Narayanganj,2020,NOX,1621
+Q2 stuck run,Narsingdi,2023,NOX,56
+Q2 stuck run,Narsingdi,2024,NOX,92
+Q2 stuck run,Rajshahi,2024,NOX,7
+Q2 stuck run,Rangpur,2023,NOX,6
+Q2 stuck run,Savar,2023,NOX,923
+Q2 stuck run,Savar,2024,NOX,95
+Q2 stuck run,Sylhet,2012,NOX,9
+Q2 stuck run,Sylhet,2013,NOX,7
+Q1 range,BTV Chattogram,2021,CO,91
+Q1 range,Gazipur,2024,CO,85
+Q1 range,Savar,2021,CO,30
+Q1 range,Savar,2024,CO,73
+Q1 range,Sylhet,2024,CO,1
+Q2 stuck run,Agrabad CDA Chattogram,2015,CO,20
+Q2 stuck run,BARC,2020,CO,51
+Q2 stuck run,BARC,2022,CO,8
+Q2 stuck run,BARC,2023,CO,268
+Q2 stuck run,BARC,2024,CO,6
+Q2 stuck run,BTV Chattogram,2014,CO,18
+Q2 stuck run,BTV Chattogram,2015,CO,23
+Q2 stuck run,BTV Chattogram,2021,CO,18
+Q2 stuck run,BTV Chattogram,2022,CO,6
+Q2 stuck run,BTV Chattogram,2024,CO,61
+Q2 stuck run,Cumilla,2022,CO,473
+Q2 stuck run,Cumilla,2023,CO,562
+Q2 stuck run,Cumilla,2024,CO,6
+Q2 stuck run,DoE,2024,CO,55
+Q2 stuck run,Gazipur,2024,CO,6
+Q2 stuck run,Khulna,2022,CO,126
+Q2 stuck run,Khulna,2024,CO,15
+Q2 stuck run,Mymensingh,2020,CO,42
+Q2 stuck run,Mymensingh,2021,CO,288
+Q2 stuck run,Mymensingh,2023,CO,291
+Q2 stuck run,Mymensingh,2024,CO,187
+Q2 stuck run,Narayanganj,2019,CO,20
+Q2 stuck run,Narayanganj,2020,CO,6
+Q2 stuck run,Narayanganj,2023,CO,2190
+Q2 stuck run,Narayanganj,2024,CO,3077
+Q2 stuck run,Narsingdi,2022,CO,488
+Q2 stuck run,Narsingdi,2023,CO,116
+Q2 stuck run,Narsingdi,2024,CO,111
+Q2 stuck run,Rajshahi,2022,CO,7
+Q2 stuck run,Rajshahi,2023,CO,15
+Q2 stuck run,Rangpur,2022,CO,261
+Q2 stuck run,Rangpur,2024,CO,6
+Q2 stuck run,Savar,2020,CO,58
+Q2 stuck run,Savar,2021,CO,13
+Q2 stuck run,Savar,2022,CO,96
+Q2 stuck run,Savar,2024,CO,43
+Q2 stuck run,Sylhet,2013,CO,7
+Q2 stuck run,Sylhet,2015,CO,15
+Q2 stuck run,Sylhet,2016,CO,19
+Q2 stuck run,Sylhet,2019,CO,6
+Q2 stuck run,Sylhet,2021,CO,35
+Q2 stuck run,Sylhet,2023,CO,2258
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2013,PM25+PM10,50
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2014,PM25+PM10,44
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2015,PM25+PM10,65
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2016,PM25+PM10,13
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2017,PM25+PM10,1
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2019,PM25+PM10,2
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2020,PM25+PM10,1
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2021,PM25+PM10,54
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2022,PM25+PM10,285
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2023,PM25+PM10,262
+Q3 PM2.5 > 1.1 PM10,Agrabad CDA Chattogram,2024,PM25+PM10,45
+Q3 PM2.5 > 1.1 PM10,BARC,2012,PM25+PM10,2
+Q3 PM2.5 > 1.1 PM10,BARC,2013,PM25+PM10,212
+Q3 PM2.5 > 1.1 PM10,BARC,2014,PM25+PM10,1126
+Q3 PM2.5 > 1.1 PM10,BARC,2015,PM25+PM10,1221
+Q3 PM2.5 > 1.1 PM10,BARC,2016,PM25+PM10,74
+Q3 PM2.5 > 1.1 PM10,BARC,2017,PM25+PM10,187
+Q3 PM2.5 > 1.1 PM10,BARC,2018,PM25+PM10,42
+Q3 PM2.5 > 1.1 PM10,BARC,2019,PM25+PM10,76
+Q3 PM2.5 > 1.1 PM10,BARC,2020,PM25+PM10,25
+Q3 PM2.5 > 1.1 PM10,BARC,2021,PM25+PM10,429
+Q3 PM2.5 > 1.1 PM10,BARC,2022,PM25+PM10,543
+Q3 PM2.5 > 1.1 PM10,BARC,2023,PM25+PM10,400
+Q3 PM2.5 > 1.1 PM10,BARC,2024,PM25+PM10,142
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2012,PM25+PM10,101
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2013,PM25+PM10,493
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2014,PM25+PM10,81
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2015,PM25+PM10,691
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2016,PM25+PM10,19
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2017,PM25+PM10,13
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2018,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2019,PM25+PM10,18
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2020,PM25+PM10,18
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2021,PM25+PM10,550
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2022,PM25+PM10,53
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2023,PM25+PM10,196
+Q3 PM2.5 > 1.1 PM10,BTV Chattogram,2024,PM25+PM10,156
+Q3 PM2.5 > 1.1 PM10,Barishal,2012,PM25+PM10,5
+Q3 PM2.5 > 1.1 PM10,Barishal,2013,PM25+PM10,280
+Q3 PM2.5 > 1.1 PM10,Barishal,2014,PM25+PM10,248
+Q3 PM2.5 > 1.1 PM10,Barishal,2015,PM25+PM10,184
+Q3 PM2.5 > 1.1 PM10,Barishal,2016,PM25+PM10,70
+Q3 PM2.5 > 1.1 PM10,Barishal,2017,PM25+PM10,4
+Q3 PM2.5 > 1.1 PM10,Barishal,2018,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,Barishal,2020,PM25+PM10,395
+Q3 PM2.5 > 1.1 PM10,Barishal,2021,PM25+PM10,81
+Q3 PM2.5 > 1.1 PM10,Barishal,2022,PM25+PM10,6
+Q3 PM2.5 > 1.1 PM10,Barishal,2023,PM25+PM10,32
+Q3 PM2.5 > 1.1 PM10,Barishal,2024,PM25+PM10,18
+Q3 PM2.5 > 1.1 PM10,Cumilla,2020,PM25+PM10,530
+Q3 PM2.5 > 1.1 PM10,Cumilla,2021,PM25+PM10,2258
+Q3 PM2.5 > 1.1 PM10,Cumilla,2022,PM25+PM10,345
+Q3 PM2.5 > 1.1 PM10,Cumilla,2023,PM25+PM10,910
+Q3 PM2.5 > 1.1 PM10,Cumilla,2024,PM25+PM10,878
+Q3 PM2.5 > 1.1 PM10,Darussalam,2012,PM25+PM10,14
+Q3 PM2.5 > 1.1 PM10,Darussalam,2013,PM25+PM10,68
+Q3 PM2.5 > 1.1 PM10,Darussalam,2014,PM25+PM10,96
+Q3 PM2.5 > 1.1 PM10,Darussalam,2015,PM25+PM10,86
+Q3 PM2.5 > 1.1 PM10,Darussalam,2016,PM25+PM10,20
+Q3 PM2.5 > 1.1 PM10,Darussalam,2017,PM25+PM10,31
+Q3 PM2.5 > 1.1 PM10,Darussalam,2018,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,Darussalam,2019,PM25+PM10,8
+Q3 PM2.5 > 1.1 PM10,Darussalam,2021,PM25+PM10,54
+Q3 PM2.5 > 1.1 PM10,Darussalam,2022,PM25+PM10,81
+Q3 PM2.5 > 1.1 PM10,Darussalam,2023,PM25+PM10,173
+Q3 PM2.5 > 1.1 PM10,Darussalam,2024,PM25+PM10,146
+Q3 PM2.5 > 1.1 PM10,DoE,2023,PM25+PM10,31
+Q3 PM2.5 > 1.1 PM10,DoE,2024,PM25+PM10,699
+Q3 PM2.5 > 1.1 PM10,Gazipur,2012,PM25+PM10,4
+Q3 PM2.5 > 1.1 PM10,Gazipur,2013,PM25+PM10,171
+Q3 PM2.5 > 1.1 PM10,Gazipur,2014,PM25+PM10,25
+Q3 PM2.5 > 1.1 PM10,Gazipur,2015,PM25+PM10,39
+Q3 PM2.5 > 1.1 PM10,Gazipur,2016,PM25+PM10,77
+Q3 PM2.5 > 1.1 PM10,Gazipur,2017,PM25+PM10,19
+Q3 PM2.5 > 1.1 PM10,Gazipur,2018,PM25+PM10,8
+Q3 PM2.5 > 1.1 PM10,Gazipur,2019,PM25+PM10,1
+Q3 PM2.5 > 1.1 PM10,Gazipur,2021,PM25+PM10,21
+Q3 PM2.5 > 1.1 PM10,Gazipur,2022,PM25+PM10,77
+Q3 PM2.5 > 1.1 PM10,Gazipur,2023,PM25+PM10,85
+Q3 PM2.5 > 1.1 PM10,Gazipur,2024,PM25+PM10,249
+Q3 PM2.5 > 1.1 PM10,Khulna,2022,PM25+PM10,429
+Q3 PM2.5 > 1.1 PM10,Khulna,2023,PM25+PM10,593
+Q3 PM2.5 > 1.1 PM10,Khulna,2024,PM25+PM10,680
+Q3 PM2.5 > 1.1 PM10,Mymensingh,2020,PM25+PM10,6
+Q3 PM2.5 > 1.1 PM10,Mymensingh,2021,PM25+PM10,322
+Q3 PM2.5 > 1.1 PM10,Mymensingh,2022,PM25+PM10,45
+Q3 PM2.5 > 1.1 PM10,Mymensingh,2023,PM25+PM10,78
+Q3 PM2.5 > 1.1 PM10,Mymensingh,2024,PM25+PM10,494
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2012,PM25+PM10,10
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2013,PM25+PM10,24
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2014,PM25+PM10,21
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2015,PM25+PM10,4
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2016,PM25+PM10,4
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2017,PM25+PM10,11
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2018,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2019,PM25+PM10,2
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2021,PM25+PM10,19
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2022,PM25+PM10,22
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2023,PM25+PM10,32
+Q3 PM2.5 > 1.1 PM10,Narayanganj,2024,PM25+PM10,163
+Q3 PM2.5 > 1.1 PM10,Narsingdi,2022,PM25+PM10,595
+Q3 PM2.5 > 1.1 PM10,Narsingdi,2023,PM25+PM10,534
+Q3 PM2.5 > 1.1 PM10,Narsingdi,2024,PM25+PM10,597
+Q3 PM2.5 > 1.1 PM10,Rajshahi,2022,PM25+PM10,576
+Q3 PM2.5 > 1.1 PM10,Rajshahi,2023,PM25+PM10,733
+Q3 PM2.5 > 1.1 PM10,Rajshahi,2024,PM25+PM10,432
+Q3 PM2.5 > 1.1 PM10,Rangpur,2022,PM25+PM10,86
+Q3 PM2.5 > 1.1 PM10,Rangpur,2023,PM25+PM10,329
+Q3 PM2.5 > 1.1 PM10,Rangpur,2024,PM25+PM10,451
+Q3 PM2.5 > 1.1 PM10,Savar,2020,PM25+PM10,1682
+Q3 PM2.5 > 1.1 PM10,Savar,2021,PM25+PM10,1596
+Q3 PM2.5 > 1.1 PM10,Savar,2022,PM25+PM10,56
+Q3 PM2.5 > 1.1 PM10,Savar,2023,PM25+PM10,306
+Q3 PM2.5 > 1.1 PM10,Savar,2024,PM25+PM10,265
+Q3 PM2.5 > 1.1 PM10,Sylhet,2012,PM25+PM10,31
+Q3 PM2.5 > 1.1 PM10,Sylhet,2013,PM25+PM10,39
+Q3 PM2.5 > 1.1 PM10,Sylhet,2014,PM25+PM10,14
+Q3 PM2.5 > 1.1 PM10,Sylhet,2015,PM25+PM10,32
+Q3 PM2.5 > 1.1 PM10,Sylhet,2016,PM25+PM10,2
+Q3 PM2.5 > 1.1 PM10,Sylhet,2017,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,Sylhet,2019,PM25+PM10,3
+Q3 PM2.5 > 1.1 PM10,Sylhet,2020,PM25+PM10,55
+Q3 PM2.5 > 1.1 PM10,Sylhet,2021,PM25+PM10,5
+Q3 PM2.5 > 1.1 PM10,Sylhet,2022,PM25+PM10,7
+Q3 PM2.5 > 1.1 PM10,Sylhet,2023,PM25+PM10,6
+Q3 PM2.5 > 1.1 PM10,Sylhet,2024,PM25+PM10,96

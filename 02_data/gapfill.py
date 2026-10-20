@@ -73,6 +73,29 @@ def blocked_cv(df, n_blocks=8, block_hours=181 * 24, seed=0):
     return pd.DataFrame(scores)
 
 
+def blocked_cv_predictions(df, n_blocks=8, block_hours=181 * 24, seed=0):
+    """The held-out predictions of blocked_cv (same blocks, same models), hour by hour, so
+    the error can be broken down by season, hour of day and boundary-layer depth."""
+    obs = df["boundary_layer_height"].notna().values
+    X = build_features(df)
+    y = df["boundary_layer_height"].values
+    idx = np.where(obs)[0]
+    rng = np.random.default_rng(seed)
+    out = []
+    for b in range(n_blocks):
+        if len(idx) <= block_hours + 24:
+            break
+        s = rng.integers(0, len(idx) - block_hours)
+        hold = idx[s:s + block_hours]
+        tr = np.setdiff1d(idx, hold)
+        m = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.08,
+                                          max_depth=8, random_state=seed + b)
+        m.fit(X.iloc[tr], y[tr])
+        out.append(pd.DataFrame({"time": df["time"].values[hold], "block": b,
+                                 "obs": y[hold], "pred": m.predict(X.iloc[hold])}))
+    return pd.concat(out, ignore_index=True)
+
+
 def fill(df, seed=0):
     X = build_features(df)
     y = df["boundary_layer_height"].values

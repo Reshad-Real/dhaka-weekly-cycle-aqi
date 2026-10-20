@@ -12,8 +12,10 @@ This script re-estimates the result several ways:
   dry         November-April            wet        May-October
   noembassy   Dhaka pool without the US Embassy monitor
   loo_<site>  Dhaka pool leaving one station out
+  no_imputed  without the gap-filled boundary-layer months (Jan-Jun 2024)
+  balanced    only dates on which >= 70% of the region's stations report
   screen_none, screen_strict   the same fits with no station screens, and with stricter
-              thresholds (PM2.5 r >= 0.85; gas rho >= 0.3; flat-line CV >= 0.2)
+              thresholds (PM2.5 r >= 0.85; gas rho >= 0.3; any analyzer with CV < 0.2 dropped)
   bootstrap   joint-date moving-block bootstrap (14-day blocks resampled identically for
               every station, B = 400), which keeps the cross-station dependence; the
               pooled estimate uses fixed inverse-variance weights from the main fit
@@ -34,7 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from cams_shocks import BLOCKS, calendars, embassy_hourly, frame, met_daily  # noqa: E402
 from cams_pooled import DHAKA, dl_pool  # noqa: E402
-from screens import gas_allowed, screens  # noqa: E402
+from screens import gas_allowed, is_fault, screens  # noqa: E402
 
 DATA = os.path.join(HERE, "..", "data")
 OUT = os.path.join(HERE, "..", "out")
@@ -100,9 +102,9 @@ def fit(s, dw, met=True, cov="HAC", point_only=False):
 # (Dhaka-region PM2.5); rho: correlation of a gas analyzer with TROPOMI NO2 (Dhaka region);
 # cv: flat-line threshold on the 30-day coefficient of variation (all gas analyzers).
 SCREEN_RULES = {
-    "main": dict(r=0.6, lag=1, rho=0.2, cv=0.15),
-    "screen_none": dict(r=None, lag=None, rho=None, cv=None),
-    "screen_strict": dict(r=0.85, lag=1, rho=0.3, cv=0.2),
+    "main": dict(r=0.6, lag=1, rho=0.2, cv=0.15, r_fault=0.1),
+    "screen_none": dict(r=None, lag=None, rho=None, cv=None, r_fault=None),
+    "screen_strict": dict(r=0.85, lag=1, rho=0.3, cv=0.2, r_fault=None),
 }
 
 
@@ -115,7 +117,8 @@ def passes(rule, st, reg, y, val, fl):
             return True
         v = val.loc[st]
         return v.daily_r_embassy >= rule["r"] and abs(v.best_lag_h) <= rule["lag"]
-    if rule["cv"] is not None and (st, y) in fl and fl[(st, y)] < rule["cv"]:
+    if rule["cv"] is not None and (st, y) in fl and is_fault(fl[(st, y)][0], fl[(st, y)][1],
+                                                             rule["cv"], rule["r_fault"]):
         return False
     if reg == "Dhaka" and rule["rho"] is not None:
         return st in val.index and val.loc[st, y + "_rho_tropomi"] >= rule["rho"]
@@ -128,7 +131,7 @@ def load(root):
     ok_pm, gas_ok, flat = screens()
     val = pd.read_csv(os.path.join(OUT, "cams_validation.csv")).set_index("station")
     flt = pd.read_csv(os.path.join(OUT, "cams_flatline_check.csv"))
-    fl = {(r.station, r.tracer): r.daily_cv30 for r in flt.itertuples()}
+    fl = {(r.station, r.tracer): (r.daily_cv30, r.r_pm25) for r in flt.itertuples()}
     cams = pd.read_csv(os.path.join(DATA, "cams_hourly_qc.csv.gz"), parse_dates=["time"])
     cams = cams[(cams.time >= "2019-01-01") & (cams.time < "2025-01-01")]
     emb = embassy_hourly(root)
@@ -182,6 +185,8 @@ def main(root):
         "y2022_25": dict(sel=lambda s: s[s.index.year >= 2022]),
         "dry": dict(sel=lambda s: s[s.index.month.isin([11, 12, 1, 2, 3, 4])]),
         "wet": dict(sel=lambda s: s[s.index.month.isin([5, 6, 7, 8, 9, 10])]),
+        # without the 4,368 gap-filled boundary-layer hours (1 January - 30 June 2024)
+        "no_imputed": dict(sel=lambda s: s[(s.index < "2024-01-01") | (s.index > "2024-06-30")]),
     }
     est_all = []
     for name, v in variants.items():
@@ -198,6 +203,27 @@ def main(root):
         est["variant"] = name
         est_all.append(est)
         print("variant %-9s %d station estimates" % (name, len(est)))
+    # balanced sample: only dates on which at least 70 percent of the region's stations with
+    # this tracer and block report, so the pooled contrast does not mix station sets by date
+    present = {}
+    for (st, reg, y, blk), s in frames.items():
+        present.setdefault((reg, y, blk), []).append(set(s.index))
+    keep = {}
+    for k, sets in present.items():
+        cnt = pd.Series([d for ss in sets for d in ss]).value_counts()
+        keep[k] = set(cnt[cnt >= np.ceil(0.7 * len(sets))].index)
+    rows = []
+    for (st, reg, y, blk), s in frames.items():
+        ss = s[s.index.isin(keep[(reg, y, blk)])]
+        for dw in (4, 5):
+            r = fit(ss, dw)
+            if r:
+                rows.append(dict(station=st, region=reg, tracer=y, block=blk,
+                                 day=DAYN[dw], b=r[0], se=r[1], n=r[2]))
+    est = pd.DataFrame(rows)
+    est["variant"] = "balanced"
+    est_all.append(est)
+    print("variant balanced      %d station estimates" % len(est))
     # screening thresholds: the same Friday and Saturday fits on other station sets
     for name in ("screen_none", "screen_strict"):
         rows = []
@@ -218,7 +244,7 @@ def main(root):
     EST.to_csv(os.path.join(OUT, "robust_station_estimates.csv"), index=False)
 
     tabs = []
-    for name in list(variants) + ["screen_none", "screen_strict"]:
+    for name in list(variants) + ["balanced", "screen_none", "screen_strict"]:
         tabs.append(pooled_table(EST[EST.variant == name], name))
     main = EST[EST.variant == "main"]
     tabs.append(pooled_table(main[main.station != "US Embassy"], "noembassy"))
@@ -253,59 +279,134 @@ def main(root):
     print(m[["region", "tracer", "block", "day", "pct", "z", "p", "q_BH"]].round(4).to_string(index=False))
 
     # ---------------------------------------------------------------- bootstrap
+    # Joint-date moving-block bootstrap.  Each draw resamples the same 14-day calendar blocks
+    # for every station, day of week and outcome, so the dependence between stations (same
+    # dates, same weather) and between Thursday, Friday and Saturday is kept.  Friday rows are
+    # computed exactly as before; Thursday, Saturday and the daily PM2.5 AQI sub-index come
+    # from the same draws.  Pooling uses fixed inverse-variance weights from the main fit.
+    from events_hourly import aqi_pm25
+    aqi_frames = {}
+    for (st, reg, y, blk), s in frames.items():
+        if y == "PM25" and blk == "daily":
+            a = s.copy()
+            a["ly"] = aqi_pm25(a["PM25"].values)
+            aqi_frames[(st, reg, "AQI", "daily")] = a.dropna(subset=["ly"])
+    rows = []
+    for (st, reg, y, blk), s in aqi_frames.items():
+        for dw in (3, 4, 5):
+            r = fit(s, dw)
+            if r:
+                rows.append(dict(station=st, region=reg, tracer=y, block=blk, day=DAYN[dw],
+                                 b=r[0], se=r[1], n=r[2]))
+    main_all = pd.concat([main, pd.DataFrame(rows)], ignore_index=True)
+    allf = dict(frames)
+    allf.update(aqi_frames)
+    BOOT_DAYS = (4, 3, 5)                      # Friday first: its draws are the published ones
     w_main = {}
-    for (reg, y, blk), g in main[main.day == "Fri"].groupby(["region", "tracer", "block"]):
+    for (reg, y, blk, day), g in main_all[main_all.day.isin([DAYN[d] for d in BOOT_DAYS])].groupby(
+            ["region", "tracer", "block", "day"]):
         _, _, tau2, _, _ = dl_pool(g.b, g.se)
-        w_main[(reg, y, blk)] = {r.station: 1 / (r.se ** 2 + tau2) for r in g.itertuples()}
-    nblk = int(np.ceil((pd.Timestamp("2025-12-31") - T0).days / BLOCK_DAYS)) + 1
-    cache = {}
-    for key, s in frames.items():
-        st, reg, y, blk = key
-        if (reg, y, blk) not in w_main or st not in w_main[(reg, y, blk)]:
-            continue
-        s = s[s.dow.isin(WORK + [4])]
-        bid = ((s.index - T0).days // BLOCK_DAYS).values
-        rows_by = {b: np.where(bid == b)[0] for b in np.unique(bid)}
-        cache[key] = (s, rows_by)
-    boots = []
-    for it in range(B):
-        draw = RNG.integers(0, nblk, nblk)
-        res = {}
-        for (st, reg, y, blk), (s, rows_by) in cache.items():
-            idx = np.concatenate([rows_by[b] for b in draw if b in rows_by] or [np.array([], int)])
-            if len(idx) < 150:
+        w_main[(reg, y, blk, day)] = {r.station: 1 / (r.se ** 2 + tau2) for r in g.itertuples()}
+
+    def make_cache(block_days, days, keys):
+        cache = {}
+        for key in keys:
+            st, reg, y, blk = key
+            for dw in days:
+                k = (reg, y, blk, DAYN[dw])
+                if k not in w_main or st not in w_main[k]:
+                    continue
+                s = allf[key]
+                s = s[s.dow.isin(WORK + [dw])]
+                bid = ((s.index - T0).days // block_days).values
+                cache[(key, dw)] = (s, {b: np.where(bid == b)[0] for b in np.unique(bid)})
+        return cache
+
+    def run_boot(cache, nb, block_days, rng):
+        nblk = int(np.ceil((pd.Timestamp("2025-12-31") - T0).days / block_days)) + 1
+        out = []
+        for it in range(nb):
+            draw = rng.integers(0, nblk, nblk)
+            res = {}
+            for ((st, reg, y, blk), dw), (s, rows_by) in cache.items():
+                idx = np.concatenate([rows_by[b] for b in draw if b in rows_by] or [np.array([], int)])
+                if len(idx) < 150:
+                    continue
+                b = fit(s.iloc[idx], dw, point_only=True)
+                if b is not None:
+                    res.setdefault((reg, y, blk, DAYN[dw]), []).append((st, b))
+            for k, lst in res.items():
+                w = w_main[k]
+                out.append(dict(it=it, region=k[0], tracer=k[1], block=k[2], day=k[3],
+                                b=sum(w[st] * b for st, b in lst) / sum(w[st] for st, b in lst)))
+            if (it + 1) % 100 == 0:
+                print("bootstrap", block_days, "days", it + 1)
+        return pd.DataFrame(out)
+
+    def summarise(BT):
+        point = []
+        for (reg, y, blk, day), g in main_all.groupby(["region", "tracer", "block", "day"]):
+            k = (reg, y, blk, day)
+            if k not in w_main:
                 continue
-            ss = s.iloc[idx]
-            b = fit(ss, 4, point_only=True)
-            if b is not None:
-                res.setdefault((reg, y, blk), []).append((st, b))
-        for k, lst in res.items():
             w = w_main[k]
-            num = sum(w[st] * b for st, b in lst)
-            den = sum(w[st] for st, b in lst)
-            boots.append(dict(it=it, region=k[0], tracer=k[1], block=k[2], b=num / den))
-        if (it + 1) % 100 == 0:
-            print("bootstrap", it + 1)
-    BT = pd.DataFrame(boots)
-    point = []
-    for (reg, y, blk), g in main[main.day == "Fri"].groupby(["region", "tracer", "block"]):
-        w = w_main[(reg, y, blk)]
-        point.append(dict(region=reg, tracer=y, block=blk,
-                          b_point=sum(w[r.station] * r.b for r in g.itertuples()) / sum(w.values()),
-                          se_DL=dl_pool(g.b, g.se)[1]))
-    PT = pd.DataFrame(point)
-    S = BT.groupby(["region", "tracer", "block"]).b.agg(
-        se_boot="std", lo_b=lambda x: np.percentile(x, 2.5), hi_b=lambda x: np.percentile(x, 97.5)).reset_index()
-    S = PT.merge(S, on=["region", "tracer", "block"])
-    S["pct"] = 100 * (np.exp(S.b_point) - 1)
-    S["lo_pct"] = 100 * (np.exp(S.lo_b) - 1)
-    S["hi_pct"] = 100 * (np.exp(S.hi_b) - 1)
-    S["z_boot"] = S.b_point / S.se_boot
-    S["se_inflation"] = S.se_boot / S.se_DL
-    S.to_csv(os.path.join(OUT, "robust_bootstrap.csv"), index=False)
-    print("\nJoint-date block bootstrap, Friday (B=%d, %d-day blocks)" % (B, BLOCK_DAYS))
-    print(S[["region", "tracer", "block", "pct", "lo_pct", "hi_pct", "z_boot", "se_inflation"]]
+            point.append(dict(region=reg, tracer=y, block=blk, day=day,
+                              b_point=sum(w[r.station] * r.b for r in g.itertuples()) / sum(w.values()),
+                              se_DL=dl_pool(g.b, g.se)[1], k=len(g)))
+        PT = pd.DataFrame(point)
+        S = BT.groupby(["region", "tracer", "block", "day"]).b.agg(
+            se_boot="std", lo_b=lambda x: np.percentile(x, 2.5),
+            hi_b=lambda x: np.percentile(x, 97.5)).reset_index()
+        S = PT.merge(S, on=["region", "tracer", "block", "day"])
+        S["pct"] = 100 * (np.exp(S.b_point) - 1)
+        S["lo_pct"] = 100 * (np.exp(S.lo_b) - 1)
+        S["hi_pct"] = 100 * (np.exp(S.hi_b) - 1)
+        # the AQI sub-index is modelled in index points, not logs: no percentage
+        S.loc[S.tracer == "AQI", ["pct", "lo_pct", "hi_pct"]] = np.nan
+        S["z_boot"] = S.b_point / S.se_boot
+        S["se_inflation"] = S.se_boot / S.se_DL
+        return S
+
+    cache = make_cache(BLOCK_DAYS, BOOT_DAYS, list(allf))
+    BT = run_boot(cache, B, BLOCK_DAYS, RNG)
+    BT.to_csv(os.path.join(OUT, "robust_bootstrap_draws.csv.gz"), index=False)
+    S = summarise(BT)
+    # the Friday log-outcome rows keep their published file, unchanged in layout
+    S[(S.day == "Fri") & (S.tracer != "AQI")].drop(columns=["day", "k"]).to_csv(
+        os.path.join(OUT, "robust_bootstrap.csv"), index=False)
+    S.to_csv(os.path.join(OUT, "robust_bootstrap_days.csv"), index=False)
+    print("\nJoint-date block bootstrap (B=%d, %d-day blocks)" % (B, BLOCK_DAYS))
+    print(S[["region", "tracer", "block", "day", "pct", "lo_pct", "hi_pct", "z_boot", "se_inflation"]]
           .round(2).to_string(index=False))
+
+    # Benjamini-Hochberg on the bootstrap p-values.  Family: every pooled Friday and Saturday
+    # test of PM2.5, NOx and CO, both regions, four blocks and the daily mean (60 tests).
+    fam = S[S.day.isin(["Fri", "Sat"]) & S.tracer.isin(["PM25", "NOX", "CO"])].copy()
+    fam["p_boot"] = 2 * norm.sf(np.abs(fam.z_boot))
+    fam = fam.sort_values("p_boot")
+    nt = len(fam)
+    qb = (fam.p_boot * nt / np.arange(1, nt + 1)).values
+    fam["q_boot"] = np.minimum(np.minimum.accumulate(qb[::-1])[::-1], 1)
+    fam.to_csv(os.path.join(OUT, "robust_bh_bootstrap.csv"), index=False)
+    print("\nBH on bootstrap p-values (%d tests)" % nt)
+    print(fam[["region", "tracer", "block", "day", "pct", "z_boot", "p_boot", "q_boot"]].round(4)
+          .to_string(index=False))
+
+    # block-length sensitivity, Friday PM2.5
+    bl = []
+    pm_keys = [k for k in frames if k[2] == "PM25"]
+    for blen in (7, 28):
+        BTb = run_boot(make_cache(blen, (4,), pm_keys), B, blen, np.random.default_rng(20261016 + blen))
+        Sb = summarise(BTb)
+        Sb["block_days"] = blen
+        bl.append(Sb)
+    S14 = S[(S.day == "Fri") & (S.tracer == "PM25")].copy()
+    S14["block_days"] = BLOCK_DAYS
+    BL = pd.concat([S14] + bl, ignore_index=True)
+    BL = BL[BL.day == "Fri"]
+    BL.to_csv(os.path.join(OUT, "robust_bootstrap_blocklen.csv"), index=False)
+    print("\nBlock-length sensitivity, Friday PM2.5")
+    print(BL[["block_days", "region", "block", "pct", "lo_pct", "hi_pct"]].round(2).to_string(index=False))
 
     # ---------------------------------------------------------------- hourly profile
     rows = []

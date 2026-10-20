@@ -53,7 +53,7 @@ def main():
         ("number altered", altered, 1, "MISMATCH"),
         ("uncovered number", base.replace(r"\section{Discussion}", r"An extra \pn{42} here. \section{Discussion}", 1), 1, "UNCOVERED"),
         ("sign flipped", flipped, 1, "MISMATCH"),
-        ("anchor reworded", base.replace("In index points, a Friday lowers", "In index points, Fridays lower", 1), 1, "ANCHOR"),
+        ("anchor reworded", base.replace("In index points, a Friday changes", "In index points, Fridays change", 1), 1, "ANCHOR"),
     ]
     bad = 0
     for name, text, want, marker in cases:

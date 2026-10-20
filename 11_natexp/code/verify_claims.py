@@ -20,7 +20,6 @@ script can gate a build.
 Usage:  python -I verify_claims.py              check
         python -I verify_claims.py --inventory  list every amber number with context
 """
-import json
 import os
 import re
 import sys
@@ -81,24 +80,33 @@ class R:
     def __init__(self):
         self.mob = csv("mobility_shocks.csv").set_index("shock")
         self.act = csv("shock_activity.csv")
-        self.boot = csv("robust_bootstrap.csv")
+        self.bd = csv("robust_bootstrap_days.csv")
+        self.bh = csv("robust_bh_bootstrap.csv")
+        self.bl = csv("robust_bootstrap_blocklen.csv")
         self.pool = csv("robust_pooled.csv")
         self.hp = csv("hourly_profiles.csv")
-        self.blh = csv("blh_by_hour.csv")
         self.share = csv("pm_share_by_hour.csv")
         self.wcheck = csv("weighting_check.csv")
-        self.vent = csv("friday_by_block_vc.csv")
         self.ev = csv("events_pooled.csv")
         self.evst = csv("events_station_units.csv")
         self.aqi = csv("aqi_by_shock.csv").set_index("event")
         self.scen = csv("aqi_scenarios.csv").set_index("scenario")
-        self.scen_st = csv("aqi_scenarios_stations.csv")
         self.qc = csv("cams_qc_report.csv").set_index("rule")
         self.val = csv("cams_validation.csv").set_index("station")
-        self.erel = csv("eid_relative_day.csv")
+        self.eidc = csv("eid_checks.csv")
+        self.etraj = csv("eid_trajectory.csv")
+        self.lock = csv("lockdown_checks.csv")
+        self.etr = csv("events_tracers.csv")
+        self.rec = csv("reconstruct.csv")
+        self.mech = csv("mechanism.csv")
+        self.dom = csv("aqi_dominance.csv")
+        self.ann = csv("aqi_annualization.csv")
+        self.gap = csv("gapfill_errors.csv").set_index("subset")
+        self.strike = csv("strike_local.csv")
+        self.flat = csv("flatline_diagnostics.csv")
+        self.miss = csv("missingness_dow.csv")
+        self.clock = csv("clock_check.csv").set_index("station")
         self.eev = csv("eid_by_event.csv")
-        with open(os.path.join(ROOT, "06_results", "metrics", "lockdown_test.json")) as f:
-            self.old_lock = json.load(f)
 
     # -- helpers
     def mobility(self, shock_prefix, col):
@@ -110,10 +118,21 @@ class R:
         assert len(q) == 1, (shock, outcome, region, len(q))
         return float(q[field].iloc[0])
 
-    def bootstrap(self, region, tracer, block, field="pct"):
-        q = self.boot[(self.boot.region == region) & (self.boot.tracer == tracer) & (self.boot.block == block)]
-        assert len(q) == 1, (region, tracer, block)
+    def boot(self, region, tracer, block, day="Fri", field="pct"):
+        """Joint-date bootstrap table (robust_bootstrap_days.csv)."""
+        q = self.bd[(self.bd.region == region) & (self.bd.tracer == tracer) & (self.bd.block == block)
+                    & (self.bd.day == day)]
+        assert len(q) == 1, (region, tracer, block, day)
         return float(q[field].iloc[0])
+
+    def bootaqi(self, region, day, field="b_point"):
+        return self.boot(region, "AQI", "daily", day, field)
+
+    def q_bh(self, region, tracer, block, day="Fri"):
+        q = self.bh[(self.bh.region == region) & (self.bh.tracer == tracer) & (self.bh.block == block)
+                    & (self.bh.day == day)]
+        assert len(q) == 1
+        return float(q.q_boot.iloc[0])
 
     def pooled(self, variant, region, tracer, day, block, field="pct"):
         q = self.pool[(self.pool.variant == variant) & (self.pool.region == region) & (self.pool.tracer == tracer)
@@ -145,6 +164,37 @@ class R:
         assert len(q) == 1, (event, station)
         return float(100 * (np.exp(q.b.iloc[0]) - 1))
 
+    def eid(self, analysis, outcome="PM25", field=None):
+        q = self.eidc[(self.eidc.analysis == analysis) & (self.eidc.outcome == outcome)]
+        assert len(q) == 1, (analysis, outcome)
+        f = field or ("b_pct" if outcome == "PM25" else "b")
+        return float(q[f].iloc[0])
+
+    def lk(self, analysis, outcome="PM25", field=None):
+        q = self.lock[(self.lock.analysis == analysis) & (self.lock.outcome == outcome)]
+        assert len(q) == 1, (analysis, outcome)
+        f = field or ("b_pct" if outcome == "PM25" else "b")
+        return float(q[f].iloc[0])
+
+    def tracer_ev(self, shock, outcome, region, field):
+        q = self.etr[(self.etr.shock == shock) & (self.etr.outcome == outcome) & (self.etr.region == region)]
+        assert len(q) == 1, (shock, outcome, region)
+        return float(q[field].iloc[0])
+
+    def traj(self, group, rels):
+        q = self.etraj[(self.etraj.group == group) & self.etraj.rel.isin(list(rels))]
+        return q.set_index("rel").pct
+
+    def recon(self, region, season, field):
+        q = self.rec[(self.rec.region == region) & (self.rec.season == season)]
+        assert len(q) == 1
+        return float(q[field].iloc[0])
+
+    def mechanism(self, test, region, block, field="est"):
+        q = self.mech[(self.mech.test == test) & (self.mech.region == region) & (self.mech.block == block)]
+        assert len(q) == 1, (test, region, block)
+        return float(q[field].iloc[0])
+
     def blh_exact(self, season, hours):
         """Median ERA5 boundary-layer height over all hours of a block and season, 2019-2025,
         recomputed from the raw file exactly as blh_weighting.py prints it."""
@@ -169,14 +219,6 @@ class R:
         q = self.wcheck[(self.wcheck.variant == variant) & (self.wcheck.region == region)]
         return float(q[field].iloc[0])
 
-    def ventilation(self, region, block, tercile, field="pct"):
-        q = self.vent[(self.vent.region == region) & (self.vent.block == block) & (self.vent.vc_tercile == tercile)]
-        return float(q[field].iloc[0])
-
-    def eid_rel(self, station, days):
-        q = self.erel[(self.erel.station == station) & (self.erel.tracer == "PM25") & self.erel.rel.isin(list(days))]
-        return q.pct
-
 
 # ------------------------------------------------------------------ expected values
 # Each value is one of:
@@ -185,32 +227,37 @@ class R:
 #   ("about", number, tol) compared within an absolute tolerance (no longer used: every
 #                          number in the manuscript is printed exactly)
 #   ("range", lo, hi)      a printed "a--b" range
-#   ("rangeabout", lo, hi, tol)
+#   ("bound_above", x)     the printed number is an upper bound ("q < 0.001")
 def claims(r):
     A = lambda v: ("abs", v)
-    BL = ["night 00-05", "morning 06-11", "afternoon 12-17", "evening 18-23"]
     PM = "PM25"
+    AFT, EVE, NIGHT, MORN, DAY = "afternoon 12-17", "evening 18-23", "night 00-05", "morning 06-11", "daily"
     C = []
 
     def add(name, anchor, values):
         C.append((name, anchor, values))
 
-    # ---------------------------------------------------------------- Data section
-    rep = csv("cams_parse_report.csv")
-    add("rows without a date", "dropped rather than reconstructed:",
-        [int(rep[rep.file.str.contains("2012") & rep.station.isna()].dropped_no_date.iloc[0])])
-    add("QC stuck and PM2.5>PM10 counts", "Over the full\nrecord these rules removed",
-        [r.qc.loc["Q2 stuck runs PM25", "n"], r.qc.loc["Q3 PM2.5 > 1.1 PM10", "n"]])
-    dh = ["BARC", "Darussalam", "DoE", "Savar", "Gazipur", "Narayanganj", "Narsingdi"]
-    rr = r.val.loc[dh, "daily_r_embassy"]
-    add("PM2.5 r range with Embassy", "correlates with the Embassy record at $r=$",
-        [("range", rr.min(), rr.max())])
-    cv = pd.read_csv(os.path.join(ROOT, "06_results", "metrics", "blh_gapfill_cv.csv"))
-    met = pd.read_csv(os.path.join(ROOT, "02_data", "raw", "meteo_dhaka_hourly_filled.csv"),
-                      usecols=["blh_filled"])
-    add("BLH gap fill", "product of mixing height and wind speed. A",
-        [int(met.blh_filled.sum()), len(cv), cv.r2.mean(), cv.rmse.mean(), cv.bias.mean()])
+    def tri_boot(region, tracer, block, day="Fri"):
+        return [r.boot(region, tracer, block, day, f) for f in ("pct", "lo_pct", "hi_pct")]
 
+    sh = lambda s, h: r.block_share(s, h)
+    dry = ["Winter", "Pre-monsoon", "Post-monsoon"]
+    aft = [sh(s, range(12, 18)) for s in dry]
+    nm = [sh(s, range(0, 12)) for s in dry + ["Monsoon"]]
+    eve = [sh(s, range(18, 24)) for s in dry]
+    sc = lambda k, f: float(r.scen.loc[k, f])
+    night_gain = 100 * (sc("cut_night_only", "d_mean_aqi") / sc("cut_day_only", "d_mean_aqi") - 1)
+
+    # ---------------------------------------------------------------- abstract
+    add("abstract", "\\nox{} falls from morning and \\pmtf{} from midday:",
+        [A(r.boot("Dhaka", PM, AFT)), A(r.boot("Dhaka", PM, AFT, field="hi_pct")),
+         A(r.boot("Dhaka", PM, AFT, field="lo_pct")),
+         A(r.boot("Dhaka", PM, EVE)), A(r.boot("Dhaka", PM, EVE, field="hi_pct")),
+         A(r.boot("Dhaka", PM, EVE, field="lo_pct"))]
+        + tri_boot("Dhaka", PM, DAY)
+        + [A(r.eid("main")), A(r.eid("main", "AQI")), A(sc("rest_day", "d_mean_aqi"))])
+
+    # ---------------------------------------------------------------- introduction
     sys.path.insert(0, HERE)            # -I leaves the script's folder off the path
     import aqi_scenarios
     emb = aqi_scenarios.embassy_hourly(ROOT)
@@ -221,7 +268,59 @@ def claims(r):
     add("Embassy level (Introduction)", "At the United States Embassy monitor in Dhaka, daily",
         [dd.mean(), dd.mean() / 5.0, 100 * (win > 150).mean()])
     fridays = int((pd.date_range("2019-01-01", "2024-12-31").dayofweek == 4).sum())
-    add("Fridays 2019-2024 (Introduction)", "a partial rest day) provides", [fridays])
+    add("Fridays 2019-2024 (Introduction)", "partial rest day) recurs", [fridays])
+
+    # ---------------------------------------------------------------- data
+    rep = csv("cams_parse_report.csv")
+    add("rows without a date", "dropped rather than reconstructed:",
+        [int(rep[rep.file.str.contains("2012") & rep.station.isna()].dropped_no_date.iloc[0])])
+    add("QC stuck and PM2.5>PM10 counts", "Over the full record these rules removed",
+        [r.qc.loc["Q2 stuck runs PM25", "n"], r.qc.loc["Q3 PM2.5 > 1.1 PM10", "n"]])
+    whole = r.miss[r.miss.hours == "all"].diff_pp
+    blk = r.miss[r.miss.hours != "all"]
+    dpm = r.miss[(r.miss.station == "DoE") & (r.miss.pollutant == "PM25") & (r.miss.hours == EVE)].diff_pp
+    add("missingness by day of week", "the share of valid hours on Fridays differs from that on Sunday to Wednesday by",
+        [whole.min(), whole.max(), int((blk.diff_pp.abs() > 5).sum()), len(blk), float(dpm.iloc[0])])
+    dh = ["BARC", "Darussalam", "DoE", "Savar", "Gazipur", "Narayanganj", "Narsingdi"]
+    rr = r.val.loc[dh, "daily_r_embassy"]
+    add("PM2.5 r range with Embassy", "correlates with the Embassy record at $r=$",
+        [("range", rr.min(), rr.max())])
+    others = r.clock.drop("Savar").sr_centroid_h.dropna()
+    add("Savar clock", "Savar's \\pmtf{} peaks",
+        [int(r.val.loc["Savar", "best_lag_h"]), r.clock.loc["Savar", "sr_centroid_h"],
+         ("range", others.min(), others.max()), int(r.clock.loc["Savar", "lag_PM25"])])
+    fl = r.flat[r.flat.flat]
+    kept = r.flat[~r.flat.flat]
+    dco = r.flat[(r.flat.station == "Darussalam") & (r.flat.pollutant == "CO")]
+    add("fault rule", "their mean hourly profiles vary by only",
+        [("range", fl.diurnal_range.min(), fl.diurnal_range.max()), kept.diurnal_range.median(),
+         fl.r_daily_pm25.min(), fl.r_daily_pm25.max(), float(dco.r_daily_pm25.iloc[0])])
+    import cams_shocks
+    trop = cams_shocks.tropomi_daily(ROOT, cams_shocks.TROPOMI_MIN_COVERAGE).loc["2019-01-01":"2025-12-31"]
+    add("TROPOMI coverage", "are observed are dropped, leaving",
+        [int(trop.notna().sum()), len(pd.date_range("2019-01-01", "2025-12-31"))])
+    cv = pd.read_csv(os.path.join(ROOT, "06_results", "metrics", "blh_gapfill_cv.csv"))
+    met = pd.read_csv(os.path.join(ROOT, "02_data", "raw", "meteo_dhaka_hourly_filled.csv"),
+                      usecols=["blh_filled"])
+    add("BLH gap fill", "hours stay finite. A",
+        [int(met.blh_filled.sum()), len(cv), cv.r2.mean(), cv.rmse.mean(), cv.bias.mean(),
+         r.gap.loc["hours 00-05", "rmse"], r.gap.loc["observed < 200 m", "rmse"], r.gap.loc["observed < 200 m", "bias"]])
+    add("usable Eid events", "fell inside the lockdown, leaving", [int(r.eid("main", field="n_events"))])
+    hart = pd.read_csv(os.path.join(ROOT, "Traffic", "data_availability", "02_event_calendars",
+                                    "hartal_event_days_DERIVED.csv"), parse_dates=["date"])
+    hd = pd.read_csv(os.path.join(ROOT, "Traffic", "data_availability", "02_event_calendars",
+                                  "hartal_event_days_DHAKA_DISTRICT_DERIVED.csv"), parse_dates=["date"])
+    in_period = lambda d: d[(d.date >= "2019-01-01") & (d.date <= "2024-12-31")]
+    add("strike calendars", "terms require. Of the", [len(in_period(hart)), len(in_period(hd))])
+
+    # ---------------------------------------------------------------- methods
+    add("BH family size", "procedure over one family of", [len(r.bh)])
+    add("Eid events resampled", "the main interval resamples the", [int(r.eid("event_boot", field="n_events"))])
+    cams_dom = 100 * r.dom[r.dom.source.str.startswith("CAMS")].share_other_higher
+    add("PM10 dominance", "exceeds it at the CAMS stations on", [("range", cams_dom.min(), cams_dom.max())])
+    a0 = r.ann.iloc[0]
+    add("annualization", "valid-day coverage is",
+        [100 * r.ann.coverage.min(), 100 * r.ann.coverage.max(), abs(a0.days_gt150_simple - a0.days_gt150_balanced)])
 
     # ---------------------------------------------------------------- 4.1 activity
     lock_t = r.mobility("lockdown", "transit").iloc[0]
@@ -232,29 +331,35 @@ def claims(r):
     st_t = r.mobility("strike", "transit").iloc[0]
     st_w = r.mobility("strike", "workplaces").iloc[0]
     st_n = int(r.mobility("strike", "n_days").iloc[0])
-    add("mobility lockdown, Eid, strikes (text)", "The lockdown\nlowered national mobility",
-        [A(lock_t), A(lock_w), lock_r, A(eid_w.mean()), A(eid_w.max()), A(eid_w.min()), eid_t.mean(), st_n, st_t, st_w])
-    add("strike NO2 and Dhaka NOx; Eid and lockdown NO2 (text)", "unchanged; over all",
-        [113, r.activity("Strike days", "TROPOMI NO2", "domain"),
-         r.activity("Strike days", "TROPOMI NO2", "domain", "lo"), r.activity("Strike days", "TROPOMI NO2", "domain", "hi"),
-         r.activity("Strike days", "NOX", "Dhaka"), r.activity("Strike days", "NOX", "Dhaka", "lo"),
-         r.activity("Strike days", "NOX", "Dhaka", "hi"),
+    add("mobility and NO2 for Eid and lockdown (text)", "The lockdown lowered national mobility",
+        [A(lock_t), A(lock_w), lock_r, A(eid_w.mean()), A(eid_w.max()), A(eid_w.min()), eid_t.mean(),
          A(r.activity("Eid", "TROPOMI NO2", "domain")), A(r.activity("Lockdown", "TROPOMI NO2", "domain"))])
+    sd = r.strike[r.strike.calendar == "Dhaka district only"].set_index("outcome")
+    add("strikes (text)", "Strike days changed activity little. On the",
+        [st_n, st_t, st_w, r.activity("Strike days", "NOX", "Dhaka"), r.activity("Strike days", "NOX", "Dhaka", "lo"),
+         r.activity("Strike days", "NOX", "Dhaka", "hi"), A(r.activity("Strike days", "TROPOMI NO2", "domain")),
+         r.activity("Strike days", "TROPOMI NO2", "domain", "lo"), r.activity("Strike days", "TROPOMI NO2", "domain", "hi"),
+         A(sd.loc["TROPOMI NO2", "pct"]), sd.loc["TROPOMI NO2", "lo"], sd.loc["TROPOMI NO2", "hi"]])
 
     def tri(shock, outcome, region):
         return [r.activity(shock, outcome, region, k) for k in ("pct", "lo", "hi")]
-    add("Table 2 Friday", "Friday & weekly rest day",
-        [fridays] + tri("Friday", "TROPOMI NO2", "domain") + tri("Friday", "NOX", "national") + tri("Friday", "CO", "national"))
-    add("Table 2 Saturday", "Saturday & partial rest day",
-        tri("Saturday", "TROPOMI NO2", "domain") + tri("Saturday", "NOX", "national") + tri("Saturday", "CO", "national"))
-    add("Table 2 Eid", "Eid & $-1$ to $+3$ days",
-        [eid_w.mean(), eid_t.mean()] + tri("Eid", "TROPOMI NO2", "domain") + tri("Eid", "NOX", "Dhaka")
-        + [r.activity("Eid", "CO", "Dhaka")])
-    add("Table 2 lockdown", "Lockdown & 26 Mar -- 30 May 2020",
-        [lock_t, lock_w, lock_r] + tri("Lockdown", "TROPOMI NO2", "domain"))
-    add("Table 2 strikes", "Strike days & ACLED-derived",
-        [113, st_n, st_t, st_w] + tri("Strike days", "TROPOMI NO2", "domain") + tri("Strike days", "NOX", "national")
-        + tri("Strike days", "CO", "national"))
+
+    def tri_ev(shock, outcome, region):
+        return [r.tracer_ev(shock, outcome, region, k) for k in ("b_pct", "lo_pct", "hi_pct")]
+    add("Table 2 Friday", "Friday & weekly rest day;",
+        [fridays] + tri("Friday", "TROPOMI NO2", "domain") + tri_boot("national", "NOX", DAY)
+        + tri_boot("national", "CO", DAY))
+    add("Table 2 Saturday", "Saturday & partial rest day &",
+        tri("Saturday", "TROPOMI NO2", "domain") + tri_boot("national", "NOX", DAY, "Sat")
+        + tri_boot("national", "CO", DAY, "Sat"))
+    add("Table 2 Eid", "Eid & $-1$ to $+3$ days;",
+        [int(r.eid("main", field="n_events")), eid_w.mean(), eid_t.mean()] + tri_ev("Eid", "TROPOMI NO2", "domain")
+        + tri_ev("Eid", "NOX", "Dhaka") + tri_ev("Eid", "CO", "Dhaka"))
+    add("Table 2 lockdown", "Lockdown & 26 Mar -- 30 May 2020 &",
+        [lock_t, lock_w, lock_r] + tri_ev("Lockdown", "TROPOMI NO2", "domain"))
+    add("Table 2 strikes", "Strike days & ACLED-derived;",
+        [len(in_period(hart)), st_n, st_t, st_w] + tri("Strike days", "TROPOMI NO2", "domain")
+        + tri("Strike days", "NOX", "national") + tri("Strike days", "CO", "national"))
 
     nox_mid = r.hourly("national", "NOX", "Fri", range(13, 18))
     co_mid = r.hourly("national", "CO", "Fri", range(13, 18))
@@ -262,208 +367,195 @@ def claims(r):
     add("weekly tracers (text)", "result. The \\notwo{} column is",
         [A(r.activity("Friday", "TROPOMI NO2", "domain")), A(r.activity("Saturday", "TROPOMI NO2", "domain")),
          A(nox_mid.max()), A(nox_mid.min()), A(co_mid.max()), A(co_mid.min()), A(co_eve.max()), A(co_eve.min()),
-         A(r.bootstrap("national", "NOX", "afternoon 12-17")), r.bootstrap("national", "NOX", "afternoon 12-17", "lo_pct"),
-         r.bootstrap("national", "NOX", "afternoon 12-17", "hi_pct"), A(r.bootstrap("national", "NOX", "evening 18-23")),
-         A(r.bootstrap("national", "CO", "afternoon 12-17")), A(r.bootstrap("national", "CO", "evening 18-23")),
-         r.bootstrap("national", "NOX", "night 00-05"), r.bootstrap("national", "NOX", "night 00-05", "lo_pct"),
-         r.bootstrap("national", "NOX", "night 00-05", "hi_pct"),
-         r.bootstrap("Dhaka", "NOX", "night 00-05"), r.bootstrap("Dhaka", "NOX", "night 00-05", "lo_pct"),
-         r.bootstrap("Dhaka", "NOX", "night 00-05", "hi_pct"),
-         A(r.pooled("main", "national", "NOX", "Sat", "night 00-05")),
-         r.pooled("main", "national", "NOX", "Sat", "night 00-05", "lo"),
-         r.pooled("main", "national", "NOX", "Sat", "night 00-05", "hi"),
-         -r.hourly("Dhaka", "NOX", "Sat", range(0, 6)).max(),
-         -r.hourly("Dhaka", "NOX", "Sat", range(0, 7)).min()])
+         A(r.boot("national", "NOX", AFT)), r.boot("national", "NOX", AFT, field="lo_pct"),
+         r.boot("national", "NOX", AFT, field="hi_pct"), A(r.boot("national", "NOX", EVE)),
+         A(r.boot("national", "CO", AFT)), A(r.boot("national", "CO", EVE)),
+         A(r.boot("national", "NOX", NIGHT)), r.boot("national", "NOX", NIGHT, field="lo_pct"),
+         r.boot("national", "NOX", NIGHT, field="hi_pct"),
+         A(r.boot("Dhaka", "NOX", NIGHT)), r.boot("Dhaka", "NOX", NIGHT, field="lo_pct"),
+         r.boot("Dhaka", "NOX", NIGHT, field="hi_pct"),
+         A(r.boot("national", "NOX", NIGHT, "Sat")), r.boot("national", "NOX", NIGHT, "Sat", "lo_pct"),
+         r.boot("national", "NOX", NIGHT, "Sat", "hi_pct"),
+         A(r.boot("Dhaka", "NOX", NIGHT, "Sat")), r.boot("Dhaka", "NOX", NIGHT, "Sat", "lo_pct"),
+         r.boot("Dhaka", "NOX", NIGHT, "Sat", "hi_pct")])
     nc_nat = r.hourly("national", "NOX_CO", "Fri", range(0, 4))
-    nc_dh = r.hourly("Dhaka", "NOX_CO", "Fri", range(2, 6))
-    dh_nc = r.hp[(r.hp.region == "Dhaka") & (r.hp.tracer == "NOX_CO")]
-    add("NOx/CO signature", "more of the fleet, is",
-        [nc_nat.min(), nc_nat.max(), float((dh_nc.hi - dh_nc.lo).median())])
+    nc_dh = r.hourly("Dhaka", "NOX_CO", "Fri", range(3, 6))
+    nc_dh_sat = r.hourly("Dhaka", "NOX_CO", "Sat", range(3, 8))
+    add("NOx/CO ratio", "where both analyzers pass, it is",
+        [nc_nat.min(), nc_nat.max(), nc_dh.min(), nc_dh.max(), A(nc_dh_sat.max()), A(nc_dh_sat.min())])
 
     # ---------------------------------------------------------------- 4.2 PM2.5
     fri_am = r.hourly("Dhaka", PM, "Fri", range(0, 12))
     fri_pm = r.hourly("Dhaka", PM, "Fri", range(13, 24))
-    paft = r.placebo_range("Dhaka", "afternoon 12-17")
-    peve = r.placebo_range("Dhaka", "evening 18-23")
+    paft = r.placebo_range("Dhaka", AFT)
+    peve = r.placebo_range("Dhaka", EVE)
     add("Dhaka hourly and blocks", "midnight to late morning (",
-        [fri_am.min(), fri_am.max(), A(fri_pm.max()), A(fri_pm.min()),
-         A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), r.bootstrap("Dhaka", PM, "afternoon 12-17", "lo_pct"),
-         r.bootstrap("Dhaka", PM, "afternoon 12-17", "hi_pct"),
-         A(r.bootstrap("Dhaka", PM, "evening 18-23")), r.bootstrap("Dhaka", PM, "evening 18-23", "lo_pct"),
-         r.bootstrap("Dhaka", PM, "evening 18-23", "hi_pct"),
-         paft[0], paft[1], peve[0], peve[1],
-         A(r.bootstrap("Dhaka", PM, "night 00-05")), r.bootstrap("Dhaka", PM, "night 00-05", "lo_pct"),
-         r.bootstrap("Dhaka", PM, "night 00-05", "hi_pct"), A(r.bootstrap("Dhaka", PM, "morning 06-11")),
-         A(r.bootstrap("Dhaka", PM, "daily")), r.bootstrap("Dhaka", PM, "daily", "lo_pct"),
-         r.bootstrap("Dhaka", PM, "daily", "hi_pct")])
+        [fri_am.min(), fri_am.max(), A(fri_pm.max()), A(fri_pm.min())]
+        + [A(r.boot("Dhaka", PM, AFT)), r.boot("Dhaka", PM, AFT, field="lo_pct"), r.boot("Dhaka", PM, AFT, field="hi_pct"),
+           A(r.boot("Dhaka", PM, EVE)), r.boot("Dhaka", PM, EVE, field="lo_pct"), r.boot("Dhaka", PM, EVE, field="hi_pct"),
+           paft[0], paft[1], peve[0], peve[1], len(r.bh), r.q_bh("Dhaka", PM, EVE), r.q_bh("Dhaka", PM, AFT),
+           A(r.boot("Dhaka", PM, NIGHT)), r.boot("Dhaka", PM, NIGHT, field="lo_pct"),
+           r.boot("Dhaka", PM, NIGHT, field="hi_pct"), A(r.boot("Dhaka", PM, MORN)),
+           A(r.boot("Dhaka", PM, DAY)), r.boot("Dhaka", PM, DAY, field="lo_pct"), r.boot("Dhaka", PM, DAY, field="hi_pct")])
     nat_h = r.hourly("national", PM, "Fri", range(12, 24))
-    sat_dh = r.hourly("Dhaka", PM, "Sat", range(0, 8))
-    sat_nat = r.hourly("national", PM, "Sat", range(0, 6))
-    add("national blocks, rest night, Saturday", "The nine stations outside the Dhaka region reproduce",
-        [A(r.bootstrap("national", PM, "afternoon 12-17")), r.bootstrap("national", PM, "afternoon 12-17", "lo_pct"),
-         r.bootstrap("national", PM, "afternoon 12-17", "hi_pct"),
-         A(r.bootstrap("national", PM, "evening 18-23")), r.bootstrap("national", PM, "evening 18-23", "lo_pct"),
-         r.bootstrap("national", PM, "evening 18-23", "hi_pct"), nat_h.min(),
-         r.bootstrap("national", PM, "night 00-05"), r.bootstrap("national", PM, "daily"),
-         r.bootstrap("national", PM, "daily", "lo_pct"), r.bootstrap("national", PM, "daily", "hi_pct"),
-         -sat_dh.mean(), A(sat_nat.min()),
-         A(r.pooled("main", "Dhaka", PM, "Sat", "afternoon 12-17")), A(r.pooled("main", "Dhaka", PM, "Sat", "evening 18-23")),
-         A(r.pooled("main", "Dhaka", PM, "Sat", "daily")), r.pooled("main", "Dhaka", PM, "Sat", "daily", "lo"),
-         r.pooled("main", "Dhaka", PM, "Sat", "daily", "hi"),
-         A(r.pooled("main", "Dhaka", PM, "Sat", "night 00-05")), r.pooled("main", "Dhaka", PM, "Sat", "night 00-05", "lo"),
-         r.pooled("main", "Dhaka", PM, "Sat", "night 00-05", "hi"),
-         A(r.bootstrap("national", PM, "afternoon 12-17")), A(r.bootstrap("national", "NOX", "afternoon 12-17")),
-         A(r.bootstrap("national", "CO", "afternoon 12-17")),
-         A(r.bootstrap("national", PM, "evening 18-23")), A(r.bootstrap("national", "NOX", "evening 18-23")),
-         A(r.bootstrap("national", "CO", "evening 18-23"))])
+    add("national blocks", "show the same timing with a stronger evening:",
+        [A(r.boot("national", PM, AFT)), r.boot("national", PM, AFT, field="lo_pct"),
+         r.boot("national", PM, AFT, field="hi_pct"), r.q_bh("national", PM, AFT),
+         A(r.boot("national", PM, EVE)), r.boot("national", PM, EVE, field="lo_pct"),
+         r.boot("national", PM, EVE, field="hi_pct"), ("bound_above", r.q_bh("national", PM, EVE)),
+         nat_h.min(), r.boot("national", PM, NIGHT), r.boot("national", PM, DAY),
+         r.boot("national", PM, DAY, field="lo_pct"), r.boot("national", PM, DAY, field="hi_pct")])
+    i2 = lambda reg, b: r.pooled("main", reg, PM, "Fri", b, "I2")
+    add("heterogeneity", "The station effects are homogeneous in Dhaka",
+        [i2("Dhaka", AFT), i2("Dhaka", EVE), i2("national", AFT), i2("national", EVE)])
+    add("Saturday and Thursday", "shows a smaller version of the Friday pattern",
+        [A(r.boot("Dhaka", PM, AFT, "Sat")), A(r.boot("Dhaka", PM, EVE, "Sat")),
+         A(r.boot("Dhaka", PM, DAY, "Sat")), r.boot("Dhaka", PM, DAY, "Sat", "lo_pct"),
+         r.boot("Dhaka", PM, DAY, "Sat", "hi_pct"),
+         A(r.boot("Dhaka", PM, NIGHT, "Sat")), r.boot("Dhaka", PM, NIGHT, "Sat", "lo_pct"),
+         r.boot("Dhaka", PM, NIGHT, "Sat", "hi_pct"),
+         A(r.boot("Dhaka", PM, MORN, "Thu")), r.boot("Dhaka", PM, MORN, "Thu", "lo_pct"),
+         r.boot("Dhaka", PM, MORN, "Thu", "hi_pct"),
+         A(r.boot("national", PM, AFT)), A(r.boot("national", "NOX", AFT)), A(r.boot("national", "CO", AFT)),
+         A(r.boot("national", PM, EVE)), A(r.boot("national", "NOX", EVE)), A(r.boot("national", "CO", EVE))])
 
     loo = r.pool[(r.pool.region == "Dhaka") & (r.pool.tracer == PM) & (r.pool.day == "Fri")
                  & r.pool.variant.str.startswith("loo_")]
-    la = loo[loo.block == "afternoon 12-17"].z
-    le = loo[loo.block == "evening 18-23"].z
+    la = loo[loo.block == AFT].z
+    le = loo[loo.block == EVE].z
     pz = lambda v, b: r.pooled(v, "Dhaka", PM, "Fri", b, "z")
     pp = lambda v, b: r.pooled(v, "Dhaka", PM, "Fri", b)
-    q = r.pool[(r.pool.variant == "main") & (r.pool.day == "Fri") & (r.pool.tracer == PM)]
-    qa = float(q[(q.region == "Dhaka") & (q.block == "afternoon 12-17")].q_BH.iloc[0])
-    qe = float(q[(q.region == "Dhaka") & (q.block == "evening 18-23")].q_BH.iloc[0])
-    qn = float(q[(q.region == "national") & (q.block == "evening 18-23")].q_BH.iloc[0])
-    infl = float(r.boot[(r.boot.region == "Dhaka") & (r.boot.tracer == PM) & (r.boot.block == "afternoon 12-17")].se_inflation.iloc[0])
+    infl = r.boot("Dhaka", PM, AFT, field="se_inflation")
+    m14 = r.bl[r.bl.block_days == 14].set_index(["region", "block"])
+    moves = []
+    for L in (7, 28):
+        o = r.bl[r.bl.block_days == L].set_index(["region", "block"])
+        moves += list((o.lo_pct - m14.lo_pct).abs()) + list((o.hi_pct - m14.hi_pct).abs())
     add("robustness", "With week-clustered errors the Dhaka",
-        [pz("cluster", "afternoon 12-17"), pz("cluster", "evening 18-23"), la.max(), la.min(), le.max(), le.min(),
-         A(pp("nomet", "afternoon 12-17")), A(pp("nomet", "evening 18-23")),
-         A(pp("y2022_25", "afternoon 12-17")), A(pp("y2022_25", "evening 18-23")),
-         pz("y2022_25", "afternoon 12-17"), pz("y2022_25", "evening 18-23"),
-         A(pp("y2019_21", "afternoon 12-17")), A(pp("y2019_21", "evening 18-23")),
-         pz("y2019_21", "afternoon 12-17"), pz("y2019_21", "evening 18-23"),
-         A(pp("screen_none", "afternoon 12-17")), A(pp("screen_none", "evening 18-23")),
-         int(r.pooled("screen_strict", "Dhaka", PM, "Fri", "afternoon 12-17", "k")),
-         A(pp("screen_strict", "afternoon 12-17")), A(pp("screen_strict", "evening 18-23")),
-         A(r.pooled("screen_none", "national", "NOX", "Fri", "afternoon 12-17")),
-         A(r.bootstrap("national", "NOX", "afternoon 12-17")),
-         qa, qe, qn, infl])
+        [pz("cluster", AFT), pz("cluster", EVE), la.max(), la.min(), le.max(), le.min(),
+         A(pp("nomet", AFT)), A(pp("nomet", EVE)), A(pp("no_imputed", AFT)), A(pp("no_imputed", EVE)),
+         A(pp("balanced", AFT)), A(pp("balanced", EVE)),
+         A(pp("y2022_25", AFT)), A(pp("y2022_25", EVE)), pz("y2022_25", AFT), pz("y2022_25", EVE),
+         A(pp("y2019_21", AFT)), A(pp("y2019_21", EVE)), pz("y2019_21", AFT), pz("y2019_21", EVE),
+         A(pp("screen_none", AFT)), A(pp("screen_none", EVE)),
+         int(r.pooled("screen_strict", "Dhaka", PM, "Fri", AFT, "k")),
+         A(pp("screen_strict", AFT)), A(pp("screen_strict", EVE)),
+         A(r.pooled("screen_none", "national", "NOX", "Fri", AFT)), A(r.boot("national", "NOX", AFT)),
+         A(r.pooled("screen_none", "Dhaka", "NOX", "Fri", AFT)), A(r.pooled("main", "Dhaka", "NOX", "Fri", AFT)),
+         infl, max(moves)])
 
-    # ---------------------------------------------------------------- 4.3 weighting
-    add("weighting opening", "The boundary layer explains why afternoon and evening responses of",
-        [A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), A(r.bootstrap("Dhaka", PM, "evening 18-23")),
-         A(r.bootstrap("Dhaka", PM, "daily"))])
+    # ---------------------------------------------------------------- 4.3 daily mean
     blh = r.blh_exact
-    add("BLH by block, winter", "In winter the median ERA5 mixing height is",
+    add("BLH and block shares", "In winter the median ERA5 boundary-layer height is",
         [blh("Winter", range(0, 6)), blh("Winter", range(6, 12)), blh("Winter", range(12, 18)),
-         blh("Winter", range(18, 24)), blh("Monsoon", range(0, 6))])
-    sh = lambda s, h: r.block_share(s, h)
-    dry = ["Winter", "Pre-monsoon", "Post-monsoon"]
-    aft = [sh(s, range(12, 18)) for s in dry]
-    nm = [sh(s, range(0, 12)) for s in dry + ["Monsoon"]]
-    eve = [sh(s, range(18, 24)) for s in dry]
-    add("block shares", "the afternoon block carries only",
-        [min(aft), max(aft), sh("Monsoon", range(12, 18)), min(nm), max(nm), min(eve), max(eve)])
+         blh("Winter", range(18, 24)), blh("Monsoon", range(0, 6)),
+         min(aft), max(aft), sh("Monsoon", range(12, 18)), min(nm), max(nm), min(eve), max(eve)])
     w = lambda v, rg, f: r.weighting(v, rg, f)
-    add("weighting identity", "Weighting the pooled block effects by these shares",
+    rc = r.recon
+    add("accounting and reconstruction", "The accounting of Eq.~\\eqref{eq:weight} predicts a daily change of",
         [w("main", "Dhaka", "predicted_daily_pct"), w("main", "Dhaka", "observed_daily_pct"),
          w("main", "national", "predicted_daily_pct"), w("main", "national", "observed_daily_pct"),
-         w("wet", "Dhaka", "predicted_daily_pct"), w("wet", "Dhaka", "observed_daily_pct"),
-         w("dry", "Dhaka", "predicted_daily_pct"), w("dry", "Dhaka", "observed_daily_pct")])
-    v = lambda rg, b, t, f="pct": r.ventilation(rg, b, t, f)
-    add("ventilation terciles", "Within the afternoon\nblock",
-        [v("national", "afternoon 12-17", "low"), v("national", "afternoon 12-17", "low", "lo"),
-         v("national", "afternoon 12-17", "low", "hi"), v("national", "afternoon 12-17", "high"),
-         v("Dhaka", "afternoon 12-17", "low"), v("Dhaka", "afternoon 12-17", "low", "lo"),
-         v("Dhaka", "afternoon 12-17", "low", "hi"), v("Dhaka", "afternoon 12-17", "high"),
-         v("Dhaka", "afternoon 12-17", "mid")])
+         int(rc("Dhaka", "all", "n_fridays")),
+         rc("Dhaka", "all", "recon_pct"), rc("Dhaka", "all", "recon_lo"), rc("Dhaka", "all", "recon_hi"),
+         rc("Dhaka", "all", "direct_pct"), rc("Dhaka", "all", "direct_lo"), rc("Dhaka", "all", "direct_hi"),
+         rc("Dhaka", "all", "diff_pp"), rc("Dhaka", "all", "diff_lo"), rc("Dhaka", "all", "diff_hi"),
+         rc("national", "all", "recon_pct"), rc("national", "all", "direct_pct"),
+         w("dry", "Dhaka", "predicted_daily_pct"), w("dry", "Dhaka", "observed_daily_pct"),
+         rc("Dhaka", "dry", "recon_pct"), rc("Dhaka", "dry", "direct_pct"),
+         rc("Dhaka", "dry", "diff_pp"), rc("Dhaka", "dry", "diff_lo"), rc("Dhaka", "dry", "diff_hi")])
+    mk = r.mechanism
+    ev_int = [mk(t, rg, EVE) for t in ("vc_interaction_per_doubling", "blh_interaction_per_doubling")
+              for rg in ("Dhaka", "national")]
+    add("boundary-layer tests", "per doubling of the ventilation coefficient it",
+        [mk("vc_interaction_per_doubling", "Dhaka", AFT), mk("vc_interaction_per_doubling", "Dhaka", AFT, "lo"),
+         mk("vc_interaction_per_doubling", "Dhaka", AFT, "hi"),
+         mk("vc_interaction_per_doubling", "national", AFT), mk("vc_interaction_per_doubling", "national", AFT, "lo"),
+         mk("vc_interaction_per_doubling", "national", AFT, "hi"),
+         mk("blh_interaction_per_doubling", "Dhaka", AFT), mk("blh_interaction_per_doubling", "Dhaka", AFT, "lo"),
+         mk("blh_interaction_per_doubling", "Dhaka", AFT, "hi"),
+         mk("blh_interaction_per_doubling", "national", AFT), mk("blh_interaction_per_doubling", "national", AFT, "lo"),
+         mk("blh_interaction_per_doubling", "national", AFT, "hi"),
+         mk("tercile_low_minus_high", "Dhaka", AFT), mk("tercile_low_minus_high", "Dhaka", AFT, "lo"),
+         mk("tercile_low_minus_high", "Dhaka", AFT, "hi"),
+         mk("tercile_low_minus_high", "national", AFT), mk("tercile_low_minus_high", "national", AFT, "lo"),
+         mk("tercile_low_minus_high", "national", AFT, "hi"),
+         min(ev_int), max(ev_int),
+         A(mk("friday_with_lagged_met", "Dhaka", AFT)), A(mk("friday_with_lagged_met", "Dhaka", EVE)),
+         mk("carryover_rho", "Dhaka", AFT), A(mk("friday_short_run_carryover", "Dhaka", AFT)),
+         A(mk("friday_short_run_carryover", "Dhaka", EVE))])
 
     # ---------------------------------------------------------------- 4.4 whole-city
-    eh = r.event_hours("Eid")
-    es = lambda st: r.event_station("Eid", st)
-    CITY = ("US Embassy", "BARC", "Darussalam")
-    city_pre = pd.concat([r.eid_rel(s, range(-4, -1)) for s in CITY])
-    city = pd.concat([r.eid_rel(s, range(0, 5)) for s in CITY])
-    city_post = pd.concat([r.eid_rel(s, range(5, 9)) for s in CITY])
-    corr = pd.concat([r.eid_rel(s, range(-5, 0)) for s in ("Narsingdi", "Savar")])
-    eh_night = r.ev[(r.ev.event == "Eid") & r.ev.unit.astype(str).isin(["0", "1", "2"])].pct
-    add("Eid (text)", "Over the Eid windows, pooled",
-        [-eh.max(), -eh.min(), -eh_night.max(), -eh_night.min(),
-         A(r.event("Eid", "daily")), r.event("Eid", "daily", "lo"),
-         r.event("Eid", "daily", "hi"), r.event("Eid", "daily", "I2"),
-         A(es("US Embassy")), A(es("BARC")), A(es("Darussalam")), A(es("Gazipur")), es("Narsingdi"),
-         city_pre.abs().max(), -city.max(), -city.min(), -city_post.max(), -city_post.min(),
-         int((corr > 0).sum()), len(corr), corr.max(),
-         A(r.activity("Eid", "TROPOMI NO2", "domain")), A(r.activity("Eid", "NOX", "Dhaka")),
-         A(r.activity("Eid", "PM25", "national"))])
+    loo_e = r.eidc[(r.eidc.outcome == PM) & r.eidc.analysis.str.startswith("loo_")].b_pct
+    city08 = r.traj("city", range(0, 9))
+    corr_pre = r.traj("corridor", range(-10, 0))
+    add("Eid (text)", "Over the Eid windows, pooled Dhaka-region",
+        [A(r.eid("main")), int(r.eid("event_boot", field="n_events")), r.eid("event_boot", field="lo_pct"),
+         r.eid("event_boot", field="hi_pct"), loo_e.max(), loo_e.min(), r.eid("fitr"), r.eid("adha"),
+         r.eid("excl_2020_2021"), A(r.eid("treat_0_4")), A(r.eid("treat_0_8")), A(r.eid("comp_clean")),
+         A(r.eid("fitr_post_only")), r.eid("fitr_post_only", field="lo_pct"), r.eid("fitr_post_only", field="hi_pct"),
+         A(float(r.traj("city", [-1]).iloc[0])), A(city08.max()), A(city08.min()),
+         A(float(r.traj("city", [10]).iloc[0]))])
+    add("Eid heterogeneity and tracers", "The station effects are heterogeneous ($I^2=$",
+        [r.eid("main", field="I2"), r.event_station("Eid", "Narsingdi"), corr_pre.min(), corr_pre.max(),
+         A(r.tracer_ev("Eid", "TROPOMI NO2", "domain", "b_pct")), A(r.tracer_ev("Eid", "NOX", "Dhaka", "b_pct")),
+         A(r.tracer_ev("Eid", "PM25", "national", "b_pct"))])
     lh = r.event_hours("Lockdown")
-    ls = lambda st: r.event_station("Lockdown", st)
-    add("lockdown (text)", "The lockdown lowered pooled",
-        [-lh.max(), -lh.min(), A(r.event("Lockdown", "night 00-05")),
-         r.event("Lockdown", "night 00-05", "lo"), r.event("Lockdown", "night 00-05", "hi"),
-         A(r.event("Lockdown", "daily")), r.event("Lockdown", "daily", "lo"), r.event("Lockdown", "daily", "hi"),
-         ls("US Embassy"), ls("BARC"), ls("Darussalam"), ls("Narayanganj"),
-         A(r.old_lock["observed_drop_matched_pct"]), r.old_lock["n_lockdown_days"],
-         r.old_lock["n_matched_control_days"]])
+    add("lockdown (text)", "The lockdown lowered pooled \\pmtf{} by",
+        [A(r.lk("main")), r.lk("main", field="lo_pct"), r.lk("main", field="hi_pct"), A(lh.max()), A(lh.min()),
+         r.lk("placebo_2019"), r.lk("placebo_2022"), r.lk("placebo_2023"), r.lk("placebo_2024"),
+         r.lk("main_with_placebo_spread", field="lo_pct"), r.lk("main_with_placebo_spread", field="hi_pct"),
+         r.lk("woy"), r.lk("nomet"), r.lk("excl_later")])
 
-    # ---------------------------------------------------------------- 4.5 AQI
-    a = lambda e, f="pooled_aqi_pts": float(r.aqi.loc[e, f])
-    s = r.scen
-    sc = lambda k, f: float(s.loc[k, f])
-    rest_rng = r.scen_st[r.scen_st.scenario == "rest_day"].d_mean_aqi
-    night_gain = 100 * (sc("cut_night_only", "d_mean_aqi") / sc("cut_day_only", "d_mean_aqi") - 1)
-    add("AQI by shock", "In index points, a Friday lowers",
-        [A(a("Friday")), a("Friday", "lo"), a("Friday", "hi"), A(a("Saturday")), a("Saturday", "lo"), a("Saturday", "hi"),
-         a("Friday", "mean_aqi"), A(a("Eid")), a("Eid", "lo"), a("Eid", "hi"),
-         A(a("Lockdown")), a("Lockdown", "lo"), a("Lockdown", "hi")])
-    add("scenarios (text)", "Against an Embassy baseline of",
+    # ---------------------------------------------------------------- 4.5 sub-index
+    add("sub-index by shock", "In index points, a Friday changes the daily sub-index by",
+        [r.bootaqi("Dhaka", "Fri"), r.bootaqi("Dhaka", "Fri", "lo_b"), r.bootaqi("Dhaka", "Fri", "hi_b"),
+         r.bootaqi("Dhaka", "Sat"), r.bootaqi("Dhaka", "Sat", "lo_b"), r.bootaqi("Dhaka", "Sat", "hi_b"),
+         float(r.aqi.loc["Friday", "mean_aqi"]),
+         r.bootaqi("national", "Fri"), r.bootaqi("national", "Fri", "lo_b"), r.bootaqi("national", "Fri", "hi_b"),
+         A(r.eid("main", "AQI")), r.eid("event_boot", "AQI", "lo"), r.eid("event_boot", "AQI", "hi"),
+         A(r.lk("main", "AQI")), r.lk("main_with_placebo_spread", "AQI", "lo"),
+         r.lk("main_with_placebo_spread", "AQI", "hi")])
+    add("scenarios (text)", "working-day baseline of",
         [sc("baseline", "mean_pm"), sc("baseline", "mean_aqi"), sc("baseline", "days150"),
-         A(sc("rest_day", "d_mean_aqi")), A(sc("rest_day", "d_days150")), A(sc("rest_day", "d_days200")),
-         sc("rest_day_lo", "d_mean_aqi"), sc("rest_day_hi", "d_mean_aqi"),
-         A(sc("cut_allday", "d_mean_aqi")), A(sc("cut_allday", "d_days150")),
-         A(sc("cut_day_only", "d_mean_aqi")), A(sc("cut_night_only", "d_mean_aqi")), night_gain,
-         A(rest_rng.max()), A(rest_rng.min()),
-         A(sc("eid_like", "d_mean_aqi")), A(sc("eid_like", "d_days150")),
-         A(sc("lockdown_like", "d_mean_aqi")), A(sc("lockdown_like", "d_days150")),
-         sc("lockdown_like", "mean_pm"), sc("lockdown_like", "mean_pm") / 35.0])
-
-    # ---------------------------------------------------------------- abstract
-    add("abstract", "measuring activity with same-site",
-        [A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), A(r.bootstrap("Dhaka", PM, "afternoon 12-17", "hi_pct")),
-         A(r.bootstrap("Dhaka", PM, "afternoon 12-17", "lo_pct")),
-         A(r.bootstrap("Dhaka", PM, "evening 18-23")), A(r.bootstrap("Dhaka", PM, "evening 18-23", "hi_pct")),
-         A(r.bootstrap("Dhaka", PM, "evening 18-23", "lo_pct")),
-         A(r.bootstrap("Dhaka", PM, "daily")), A(a("Friday")), A(sc("rest_day", "d_mean_aqi")),
-         A(r.event("Eid", "daily")), A(r.event("Lockdown", "daily")), A(a("Eid")), A(a("Lockdown"))])
+         A(sc("rest_day", "d_mean_aqi")), sc("rest_day", "d_mean_aqi_lo"), sc("rest_day", "d_mean_aqi_hi"),
+         A(sc("rest_day", "d_days150")), sc("rest_day", "d_days150_lo"), sc("rest_day", "d_days150_hi"),
+         A(sc("rest_day", "d_days200")),
+         A(sc("rest_day_calendar", "d_mean_aqi")), sc("rest_day_calendar", "d_mean_aqi_lo"),
+         sc("rest_day_calendar", "d_mean_aqi_hi"),
+         A(sc("cut_allday", "d_mean_aqi")), sc("cut_allday", "d_mean_aqi_lo"), sc("cut_allday", "d_mean_aqi_hi"),
+         A(sc("cut_day_only", "d_mean_aqi")), A(sc("cut_night_only", "d_mean_aqi")), night_gain])
 
     # ---------------------------------------------------------------- discussion
-    add("discussion 5.1", "On the weekly rest day, \\pmtf{} falls by",
-        [A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), A(r.bootstrap("Dhaka", PM, "evening 18-23")),
+    add("discussion 5.1", "On the weekly rest day, \\pmtf{} in Dhaka is",
+        [A(r.boot("Dhaka", PM, AFT)), A(r.boot("Dhaka", PM, EVE)),
          min(sh(s, range(0, 12)) for s in dry), max(sh(s, range(0, 12)) for s in dry), min(aft), max(aft),
-         A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), A(r.bootstrap("Dhaka", PM, "evening 18-23")),
-         A(r.bootstrap("Dhaka", PM, "daily")), A(a("Friday")),
-         blh("Winter", [15]), blh("Winter", [18]), min(eve), max(eve)])
-    add("discussion evening", "largest at the national stations (",
-        [r.bootstrap("national", PM, "evening 18-23")])
-    add("discussion before noon", "identical hourly cut buys", [night_gain])
-    add("discussion 5.2 rest night", "would make it; the rest night sees lower",
-        [-r.pooled("main", "national", "NOX", "Sat", "night 00-05")])
-    add("discussion 5.2 Dhaka rest night", "On the rest night in Dhaka",
+         A(w("main", "Dhaka", "predicted_daily_pct")), A(rc("Dhaka", "all", "diff_pp"))])
+    add("discussion mixing height", "In winter the median mixing height falls from",
+        [blh("Winter", [15]), blh("Winter", [18])])
+    add("discussion rest-night NOx", "the rest night sees lower \\nox, by",
+        [A(r.boot("national", "NOX", NIGHT, "Sat"))])
+    sat_dh = r.hourly("Dhaka", PM, "Sat", range(0, 8))
+    add("discussion rest night", "On the rest night in Dhaka, \\pmtf{} falls by",
         [-sat_dh.mean(), -r.hourly("Dhaka", "NOX", "Sat", range(0, 6)).max(),
          -r.hourly("Dhaka", "NOX", "Sat", range(0, 7)).min(),
-         -r.pooled("main", "national", PM, "Sat", "night 00-05"),
-         -r.pooled("main", "national", "NOX", "Sat", "night 00-05"),
-         A(r.bootstrap("national", PM, "afternoon 12-17")), A(r.bootstrap("national", "NOX", "afternoon 12-17"))])
-    add("discussion 5.3 tracers", "over the day: surface \\nox{} and CO",
-        [A(r.bootstrap("national", "NOX", "daily")), A(r.bootstrap("national", "CO", "daily")),
-         A(max(r.bootstrap("national", t, b) for t in ("NOX", "CO") for b in ("afternoon 12-17", "evening 18-23"))),
-         A(min(r.bootstrap("national", t, b) for t in ("NOX", "CO") for b in ("afternoon 12-17", "evening 18-23")))])
-    add("discussion 5.3 Eid and lockdown", "reach the night and suppress far more than traffic",
-        [A(r.event("Eid", "daily")), A(r.event("Lockdown", "daily"))])
-    I2 = [r.event(e, "daily", "I2") for e in ("Eid", "Lockdown")]
-    add("limitations I2", "effects for the whole-city shocks are heterogeneous", I2)
+         A(r.boot("national", PM, NIGHT, "Sat")), A(r.boot("national", "NOX", NIGHT, "Sat")),
+         A(r.boot("national", PM, AFT)), A(r.boot("national", "NOX", AFT))])
+    tr4 = [r.boot("national", t, b) for t in ("NOX", "CO") for b in (AFT, EVE)]
+    add("discussion tracers over the day", "pooled nationally, fall by",
+        [A(r.boot("national", "NOX", DAY)), A(r.boot("national", "CO", DAY)), A(max(tr4)), A(min(tr4))])
+    add("discussion Eid", "traffic, lowered daily \\pmtf{} at the Dhaka-region monitors by", [A(r.eid("main"))])
+    add("transferability", "the national daily mean falls more (",
+        [A(r.boot("national", PM, DAY)), A(r.boot("Dhaka", PM, DAY))])
+    add("limitations I2", "effects for the whole-city shocks are heterogeneous",
+        [r.eid("main", field="I2"), r.lk("main", field="I2")])
 
     # ---------------------------------------------------------------- conclusions
-    add("conclusions 1", "tracers fall from morning to midnight",
-        [A(r.bootstrap("Dhaka", PM, "afternoon 12-17")), A(r.bootstrap("Dhaka", PM, "evening 18-23")),
-         A(r.bootstrap("national", PM, "evening 18-23"))])
-    add("conclusions 2", "morning layer, the hours the rest day does not reach",
-        [A(r.bootstrap("Dhaka", PM, "daily")), A(a("Friday")), A(sc("rest_day", "d_mean_aqi"))])
-    add("conclusions 3", "suppress activity of every kind around the clock",
-        [A(r.event("Eid", "daily")), A(r.event("Lockdown", "daily")), A(a("Eid")), A(a("Lockdown"))])
+    add("conclusions 1", "\\pmtf{} follows from midday, by",
+        [A(r.boot("Dhaka", PM, AFT)), A(r.boot("Dhaka", PM, EVE)), A(r.boot("national", PM, EVE))])
+    add("conclusions 2", "In Dhaka the daily mean changes by",
+        [A(r.boot("Dhaka", PM, DAY)), A(r.bootaqi("Dhaka", "Fri"))])
+    add("conclusions 3", "around the clock, lowered daily \\pmtf{} by",
+        [A(r.eid("main")), A(r.eid("main", "AQI"))])
     return C
 
 
@@ -484,7 +576,7 @@ def supp_claims(r):
     dh = ["BARC", "Darussalam", "DoE", "Savar", "Gazipur", "Narayanganj", "Narsingdi"]
     dmed = float(np.median([daily[s].median() for s in dh]))
     btv = float(daily["BTV Chattogram"].median())
-    add("S2 BTV level", "The host\nlisting settles its identity", [btv, btv / dmed, dmed])
+    add("S3 BTV level", "The host\nlisting settles its identity", [btv, btv / dmed, dmed])
     eid = pd.read_csv(os.path.join(ROOT, "Traffic", "data_availability", "02_event_calendars", "eid_dates.csv"),
                       parse_dates=["date"])
     ns = q[q.station == "Narsingdi"].set_index("time").PM25
@@ -494,22 +586,25 @@ def supp_claims(r):
             continue
         w = pd.date_range(d - pd.Timedelta(days=1), d + pd.Timedelta(days=3, hours=23), freq="h")
         cov.append((int(ns.reindex(w).notna().sum()), len(w)))
-    fl = csv("cams_flatline_check.csv")
-    cv_ns = float(fl[(fl.station == "Narsingdi") & (fl.tracer == "NOX")].daily_cv30.iloc[0])
-    add("S7 Narsingdi", "at Narsingdi rose (",
-        [r.event_station("Eid", "Narsingdi"), 100 * sum(a for a, _ in cov) / sum(b for _, b in cov), len(cov),
-         min(100 * a / b for a, b in cov), max(100 * a / b for a, b in cov), cv_ns])
-    CITY = ("US Embassy", "BARC", "Darussalam")
-    pre = pd.concat([r.eid_rel(s, range(-4, -1)) for s in CITY])
-    city = pd.concat([r.eid_rel(s, range(0, 5)) for s in CITY])
-    post = pd.concat([r.eid_rel(s, range(5, 9)) for s in CITY])
-    corr = pd.concat([r.eid_rel(s, range(-5, 0)) for s in ("Narsingdi", "Savar")])
-    add("S7 timing", "At the city sites \\pmtf{}\nstays within",
-        [pre.abs().max(), -city.max(), -city.min(), -post.max(), -post.min(),
-         int((corr > 0).sum()), len(corr), corr.max()])
     ev = r.eev[(r.eev.station == "Narsingdi") & (r.eev.tracer == "PM25")].pct
-    add("S7 by event", "the Narsingdi effect is positive in", [int((ev > 0).sum()), len(ev)])
+    add("S Eid Narsingdi", "which turns the Narsingdi effect positive (",
+        [r.event_station("Eid", "Narsingdi"), 100 * sum(a for a, _ in cov) / sum(b for _, b in cov), len(cov),
+         min(100 * a / b for a, b in cov), max(100 * a / b for a, b in cov), int((ev > 0).sum()), len(ev)])
     return C
+
+
+HIGHLIGHT_LINES = 5
+
+
+def highlight_values(r):
+    """The numbers each line of highlights.txt must carry, in order."""
+    nm = [r.block_share(s, range(0, 12)) for s in ("Winter", "Pre-monsoon", "Post-monsoon", "Monsoon")]
+    k = int(r.boot("Dhaka", "PM25", "daily", field="k") + r.boot("national", "PM25", "daily", field="k"))
+    return [[k],
+            [-r.boot("Dhaka", "PM25", "afternoon 12-17"), -r.boot("Dhaka", "PM25", "evening 18-23")],
+            [min(nm), max(nm)],
+            [-r.eid("main")],
+            [-float(r.scen.loc["rest_day", "d_mean_aqi"])]]
 
 
 # ------------------------------------------------------------------ comparison
@@ -621,10 +716,7 @@ def main():
     # the highlights file carries no \pn{} marks: check its numbers line by line
     hl_path = os.path.join(os.path.dirname(TEX), "highlights.txt")
     if os.path.exists(hl_path):
-        nm = [r.block_share(s, range(0, 12)) for s in ("Winter", "Pre-monsoon", "Post-monsoon", "Monsoon")]
-        want = [[], [-r.bootstrap("Dhaka", "PM25", "afternoon 12-17"), -r.bootstrap("Dhaka", "PM25", "evening 18-23")],
-                [min(nm), max(nm)], [-float(r.scen.loc["rest_day", "d_mean_aqi"])],
-                [-r.event("Eid", "daily"), -r.event("Lockdown", "daily")]]
+        want = highlight_values(r)
         lines = open(hl_path, encoding="utf-8").read().splitlines()
         for i, (line, exp) in enumerate(zip(lines, want)):
             nums = re.findall(r"\d+\.\d+|\d+", line.replace("PM2.5", ""))
@@ -632,7 +724,7 @@ def main():
             if not ok:
                 fails.append("HIGHLIGHT line %d: printed %s, derived %s" %
                              (i + 1, nums, ", ".join("%.4g" % e for e in exp)))
-        if len(lines) > 5 or any(len(x) > 85 for x in lines):
+        if len(lines) > HIGHLIGHT_LINES or any(len(x) > 85 for x in lines):
             fails.append("HIGHLIGHT more than 5 lines or a line over 85 characters")
     # the supplement: same rules, its own claims
     supp_path = os.path.join(os.path.dirname(TEX), "supplementary.tex")

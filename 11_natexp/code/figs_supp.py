@@ -2,8 +2,11 @@
 
   figS1_station_hourly.png  Friday PM2.5 by clock hour at each Dhaka-region station
                             (out/hourly_profiles_station.csv), 95% intervals
-  figS2_eid_timing.png      PM2.5 anomaly by day relative to Eid, city sites against sites on
-                            the exit highways (out/eid_relative_day.csv)
+  figS2_eid_timing.png      pooled PM2.5 anomaly by day relative to Eid, city sites against
+                            sites on the exit highways, event-bootstrap intervals
+                            (out/eid_trajectory.csv)
+  figS3_lockdown_trajectory.png  weekly residual PM2.5, 2020 against other years
+                            (out/lockdown_trajectory.csv)
 Usage: python -I figs_supp.py
 """
 import os
@@ -53,33 +56,49 @@ def main():
     fig.tight_layout()
     fig.savefig(os.path.join(OUT, "figS1_station_hourly.png"), dpi=200)
 
-    R = pd.read_csv(os.path.join(OUT, "eid_relative_day.csv"))
-    R = R[R.tracer == "PM25"]
-    groups = (("(a) City sites", [("US Embassy", BLUE), ("BARC", ORANGE), ("Darussalam", AQUA)]),
-              ("(b) Sites on exit highways", [("Narsingdi", BLUE), ("Savar", ORANGE)]))
+    # Eid: pooled event-time trajectories with event-bootstrap intervals (events_checks.py)
+    T = pd.read_csv(os.path.join(OUT, "eid_trajectory.csv"))
     fig, ax = plt.subplots(1, 2, figsize=(10, 3.4), sharey=True)
-    for a, (title, members) in zip(ax, groups):
-        a.axvspan(-1, 3, color=GRID, lw=0, label="Eid window (-1..+3)")
-        for st, col in members:
-            q = R[R.station == st].sort_values("rel")
-            if q.empty:
-                continue
-            lo = 100 * (np.exp(np.log1p(q.pct / 100) - 1.96 * q.se) - 1)
-            hi = 100 * (np.exp(np.log1p(q.pct / 100) + 1.96 * q.se) - 1)
-            a.fill_between(q.rel, lo, hi, color=col, alpha=0.12, lw=0)
-            a.plot(q.rel, q.pct, color=col, lw=2, marker="o", ms=3, label=st)
+    for a, (grp, title, col) in zip(ax, (("city", "(a) City sites (Embassy, BARC, Darussalam)", BLUE),
+                                         ("corridor", "(b) Exit-highway sites (Narsingdi, Savar)", ORANGE))):
+        q = T[T.group == grp].sort_values("rel")
+        a.axvspan(-1, 3, color=GRID, lw=0, label="main Eid window (-1..+3)")
+        a.fill_between(q.rel, q.lo, q.hi, color=col, alpha=0.18, lw=0, label="95% interval (events resampled)")
+        a.plot(q.rel, q.pct, color=col, lw=2, marker="o", ms=3, label="pooled anomaly")
         a.axhline(0, color=INK2, lw=0.7)
         a.axvline(0, color=INK2, lw=0.7, ls=":")
         a.set_title(title, loc="left", fontsize=9)
         a.set_xlabel("Days relative to Eid")
-        a.set_xticks(range(-5, 9))
+        a.set_xticks(range(-10, 13, 2))
         a.legend(frameon=False, fontsize=7, loc="lower left")
         a.spines[["top", "right"]].set_visible(False)
         a.grid(axis="y", color=GRID, lw=0.6)
-    ax[0].set_ylabel("PM2.5 anomaly (%)")
+    ax[0].set_ylabel("PM2.5 vs days -30..-11 and +13..+30 (%)")
     fig.tight_layout()
     fig.savefig(os.path.join(OUT, "figS2_eid_timing.png"), dpi=200)
-    print("wrote figS1_station_hourly.png, figS2_eid_timing.png")
+
+    # Lockdown: weekly residuals of 2020 against the same weeks of the other years
+    L = pd.read_csv(os.path.join(OUT, "lockdown_trajectory.csv"))
+    fig, a = plt.subplots(figsize=(7.5, 3.4))
+    # the placebo years of events_checks.py: 2021 had its own lockdown, 2025 is incomplete
+    other = L[L.year.isin([2019, 2022, 2023, 2024])]
+    env = other.groupby("week").pct.agg(["min", "max", "mean"])
+    a.fill_between(env.index, env["min"], env["max"], color=GRID, lw=0, label="other years, range")
+    a.plot(env.index, env["mean"], color=INK2, lw=1.2, ls="--", label="other years, mean")
+    q = L[L.year == 2020].sort_values("week")
+    a.plot(q.week, q.pct, color=BLUE, lw=2, marker="o", ms=3, label="2020")
+    w0 = pd.Timestamp("2020-03-26").isocalendar()[1]
+    w1 = pd.Timestamp("2020-05-30").isocalendar()[1]
+    a.axvspan(w0, w1, color=BLUE, alpha=0.06, lw=0, label="lockdown (26 Mar - 30 May 2020)")
+    a.axhline(0, color=INK2, lw=0.7)
+    a.set_xlabel("ISO week (February - July)")
+    a.set_ylabel("PM2.5 residual vs model (%)")
+    a.legend(frameon=False, fontsize=7, loc="lower left", ncol=2)
+    a.spines[["top", "right"]].set_visible(False)
+    a.grid(axis="y", color=GRID, lw=0.6)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT, "figS3_lockdown_trajectory.png"), dpi=200)
+    print("wrote figS1_station_hourly.png, figS2_eid_timing.png, figS3_lockdown_trajectory.png")
 
 
 if __name__ == "__main__":

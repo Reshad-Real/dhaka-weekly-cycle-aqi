@@ -48,6 +48,20 @@ def met_daily(root):
     return d, b
 
 
+TROPOMI_MIN_COVERAGE = 0.5
+
+
+def tropomi_daily(root, min_coverage=TROPOMI_MIN_COVERAGE):
+    """Daily domain-mean TROPOMI tropospheric NO2 (umol m-2), from the Earth Engine OFFL L3
+    collection (pixels with qa_value < 0.75 removed upstream), averaged over the orbits of the
+    day and over the domain at 7 km.  Days on which fewer than `min_coverage` of the domain's
+    pixels have a valid value are dropped (0 keeps every day with any value)."""
+    t = pd.read_csv(os.path.join(root, "02_data", "raw", "tropomi_no2_dhaka_daily.csv"), parse_dates=["date"])
+    n = t["tropospheric_NO2_column_number_density_count"]
+    t = t[n >= min_coverage * n.max()]
+    return t.set_index("date")["tropospheric_NO2_column_number_density_mean"] * 1e6
+
+
 def calendars(root):
     ev = os.path.join(root, "Traffic", "data_availability", "02_event_calendars")
     hart = set(pd.read_csv(os.path.join(ev, "hartal_event_days_DERIVED.csv"), parse_dates=["date"])["date"])

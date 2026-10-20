@@ -3,9 +3,10 @@
 Data and code for the manuscript
 
 > Md. Reshad Al Muttaki, Sadia Afrin, Hasanat Fariha Noon, Alvi Ibn Amzad Anil,
-> SK Tahmed Salim Rafid and Mirza Rasheduzzaman. *Dhaka's working week does not reach the
-> night: why activity cuts barely move the daily Air Quality Index.* Prepared for submission
-> to Urban Climate, 2026.
+> SK Tahmed Salim Rafid and Mirza Rasheduzzaman. *Diurnal patterns of weekly activity and
+> PM2.5 in Dhaka: implications for the daily air quality index.* Manuscript prepared for
+> submission to Urban Climate, 2026 (an earlier draft was titled "Dhaka's working week does
+> not reach the night").
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC
 University, Dhaka, Bangladesh. Correspondence: Mirza Rasheduzzaman,
@@ -20,15 +21,16 @@ The folders mirror the project's own layout, so every script runs from a clone u
 | `11_natexp/code/` | Every analysis script (Python). `run_all.py` runs them in order. |
 | `11_natexp/data/cams_hourly_raw.csv.gz` | The DoE CAMS hourly record as parsed from CAMS-BD, one row per station-hour. |
 | `11_natexp/data/cams_hourly_qc.csv.gz` | The same after the documented quality control (`cams_qc.py`). |
-| `11_natexp/data/station_locations.csv` | Approximate station positions, geocoded from the host institutions with OpenStreetMap Nominatim. |
-| `11_natexp/out/` | Every result file (CSV, JSON) and figure (PNG) the manuscript and supplement draw on. |
-| `02_data/raw/meteo_dhaka_hourly_filled.csv` | ERA5 hourly meteorology at 23.8103 N, 90.4125 E from the Open-Meteo archive API (`models=era5`, `timezone=Asia/Dhaka`, retrieved 17 October 2026), local time, with the 4,368 gap-filled boundary-layer hours flagged in `blh_filled`. |
+| `11_natexp/data/station_locations.csv` | Station hosts and positions from the World Air Quality Index listing; the US Embassy from OpenStreetMap Nominatim. |
+| `11_natexp/out/` | Every result file (CSV, JSON, the bootstrap draws as CSV.GZ) and figure (PNG) the manuscript and supplement draw on. |
+| `02_data/raw/meteo_dhaka_hourly_filled.csv` | ERA5 hourly meteorology requested at 23.8103 N, 90.4125 E from the Open-Meteo archive API (`models=era5`, `timezone=Asia/Dhaka`, retrieved 17 October 2026), which returns the nearest 0.25 degree ERA5 cell (23.75 N, 90.50 E) without interpolation; local time, with the 4,368 gap-filled boundary-layer hours flagged in `blh_filled`. |
+| `02_data/raw/meteo_dhaka_hourly.csv` | The same ERA5 download before the gap fill (the boundary-layer gap is empty here); used for the gap-fill error analysis. |
 | `02_data/gapfill.py`, `06_results/metrics/blh_gapfill_cv.csv` | The boundary-layer gap fill and its blocked cross-validation (8 held-out 181-day blocks). |
 | `02_data/raw/tropomi_no2_dhaka_daily.csv` | Daily TROPOMI tropospheric NO2 over the study domain. |
 | `02_data/raw/no2_field_baseline.csv` | Mean TROPOMI NO2 field on non-event days (Fig. 1b). |
 | `02_data/raw/ground/Dhaka_PM2.5_*_YTD.csv` | US Embassy Dhaka hourly PM2.5, 1 January 2019 to 24 March 2025, as published by AirNow. |
-| `06_results/metrics/lockdown_test.json` | The earlier full-year lockdown estimate for the Embassy monitor that Section 4.4 compares against. |
-| `Traffic/data_availability/02_event_calendars/` | Eid dates, and strike-day dates derived from ACLED (no ACLED event records). |
+| `02_data/raw/ground/Dhaka_OZONE_*_YTD.csv` | US Embassy Dhaka hourly ozone, 2023 to March 2025, as published by AirNow; used only to check which sub-index sets the AQI. |
+| `Traffic/data_availability/02_event_calendars/` | Eid dates, and strike-day dates and Dhaka-district strike-day counts derived from ACLED (no ACLED event records). |
 | `Traffic/data_availability/01_dose_field/dose_field_0p05deg.csv` | OpenStreetMap road length per 0.05 degree cell (Fig. 1a). |
 | `Traffic/gates/data/bgd_ADM1.geojson`, `bgd_ADM2.geojson` | geoBoundaries administrative boundaries (Fig. 1). |
 | `MANIFEST.csv` | Every file with its size and SHA-256 digest. |
@@ -64,7 +66,7 @@ this deposit until publication.
 ## Sources and attribution
 
 - DoE CAMS data: Department of Environment, Bangladesh, via CAMS-BD (CC BY 4.0).
-- US Embassy Dhaka PM2.5: U.S. Department of State Air Quality Monitoring Program, AirNow,
+- US Embassy Dhaka PM2.5 and ozone: U.S. Department of State Air Quality Monitoring Program, AirNow,
   https://files.airnowtech.org/airnow/EmbassyHistorical/Dhaka/
 - TROPOMI NO2: contains modified Copernicus Sentinel data (2019-2025) processed by ESA,
   via Google Earth Engine collection COPERNICUS/S5P/OFFL/L3_NO2.

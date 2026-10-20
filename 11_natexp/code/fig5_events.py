@@ -1,10 +1,13 @@
-"""Fig. 5 draft: hour profiles of the three activity shocks, and what each buys in AQI.
+"""Fig. 5: hour profiles of the three activity shocks, and the change in the daily PM2.5 sub-index.
 
 (a) Pooled Dhaka-region percent change in PM2.5 by local hour for Friday (from
     out/robust_hourly.csv, with the working-day placebo band), Eid and the lockdown (from
-    out/events_pooled.csv), 95% intervals shaded.
-(b) Daily AQI change per shock in index points: pooled over Dhaka-region stations with
-    95% interval, and the US Embassy alone (out/aqi_by_shock.csv).
+    out/events_pooled.csv), 95% intervals shaded (stations treated as independent).
+(b) Daily PM2.5 sub-index change per shock in index points, pooled over Dhaka-region
+    stations, with the dependence-aware intervals of Table 3: the joint-date bootstrap for
+    Friday and Saturday (out/robust_bootstrap_days.csv), the event bootstrap for Eid
+    (out/eid_checks.csv) and the placebo-widened interval for the lockdown
+    (out/lockdown_checks.csv); open circles: the US Embassy alone (out/aqi_by_shock.csv).
 Usage: python -I fig5_events.py
 """
 import os
@@ -31,6 +34,17 @@ def main():
     E = E[E.unit.astype(str).str.isdigit()].copy()
     E["hour"] = E.unit.astype(int)
     A = pd.read_csv(os.path.join(OUT, "aqi_by_shock.csv")).set_index("event")
+    # dependence-aware intervals, as in Table 3
+    Bd = pd.read_csv(os.path.join(OUT, "robust_bootstrap_days.csv"))
+    Bd = Bd[(Bd.region == "Dhaka") & (Bd.tracer == "AQI")].set_index("day")
+    Ec = pd.read_csv(os.path.join(OUT, "eid_checks.csv"))
+    Ec = Ec[(Ec.analysis == "event_boot") & (Ec.outcome == "AQI")].iloc[0]
+    Lc = pd.read_csv(os.path.join(OUT, "lockdown_checks.csv"))
+    Lc = Lc[(Lc.analysis == "main_with_placebo_spread") & (Lc.outcome == "AQI")].iloc[0]
+    for ev, (b0, lo, hi) in {"Friday": Bd.loc["Fri", ["b_point", "lo_b", "hi_b"]].values,
+                             "Saturday": Bd.loc["Sat", ["b_point", "lo_b", "hi_b"]].values,
+                             "Eid": (Ec.b, Ec.lo, Ec.hi), "Lockdown": (Lc.b, Lc.lo, Lc.hi)}.items():
+        A.loc[ev, ["pooled_aqi_pts", "lo", "hi"]] = [b0, lo, hi]
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 3.6), gridspec_kw={"width_ratios": [1.7, 1]})
     a = ax[0]
@@ -46,7 +60,7 @@ def main():
     a.set_xticks(range(0, 24, 3))
     a.set_xlabel("Local hour")
     a.set_ylabel("PM2.5 change, pooled Dhaka region (%)")
-    a.set_title("(a) When each shock reaches PM2.5", loc="left", fontsize=9)
+    a.set_title("(a) When each shock changes PM2.5", loc="left", fontsize=9)
     a.legend(frameon=False, fontsize=7, loc="lower left", ncol=2)
     a.spines[["top", "right"]].set_visible(False)
     a.grid(axis="y", color=GRID, lw=0.6)
@@ -60,15 +74,15 @@ def main():
     b.scatter(A.embassy_aqi_pts, y + 0.22, marker="o", s=28, facecolors="none",
               edgecolors="#2a78d6", label="US Embassy")
     for yi, v, lo in zip(y, A.pooled_aqi_pts, A.lo):
-        b.text(lo - 1.0, yi, "%.0f" % v, ha="right", va="center", fontsize=7.5, color=INK)
+        b.text(lo - 1.0, yi, "%.1f" % v, ha="right", va="center", fontsize=7.5, color=INK)
     b.axvline(0, color=INK2, lw=0.8)
     b.set_yticks(y)
     b.set_yticklabels(order)
     b.invert_yaxis()
-    b.set_xlabel("Change in daily AQI (index points)")
-    b.set_title("(b) What each shock buys in the index", loc="left", fontsize=9)
+    b.set_xlabel("Change in the daily PM2.5 sub-index (points)")
+    b.set_title("(b) Daily PM2.5 sub-index", loc="left", fontsize=9)
     b.legend(frameon=False, fontsize=7, loc="upper left")
-    b.set_xlim(min(A.lo.min(), A.embassy_aqi_pts.min()) - 8, 4)
+    b.set_xlim(min(A.lo.min(), A.embassy_aqi_pts.min()) - 8, max(A.hi.max(), 0) + 3)
     b.spines[["top", "right"]].set_visible(False)
     b.grid(axis="x", color=GRID, lw=0.6)
     fig.tight_layout()

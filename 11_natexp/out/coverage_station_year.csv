@@ -1,0 +1,78 @@
+station,year,PM25,NOX,CO
+Agrabad CDA Chattogram,2019,44.8,60.8,61.8
+Agrabad CDA Chattogram,2020,70.4,67.1,9.3
+Agrabad CDA Chattogram,2021,29.0,70.6,0.0
+Agrabad CDA Chattogram,2022,52.0,85.0,0.0
+Agrabad CDA Chattogram,2023,71.1,94.4,24.3
+Agrabad CDA Chattogram,2024,46.5,79.4,55.5
+BARC,2019,87.6,61.3,89.1
+BARC,2020,84.2,88.6,74.4
+BARC,2021,90.8,94.1,96.4
+BARC,2022,86.4,73.8,84.5
+BARC,2023,76.6,72.4,75.9
+BARC,2024,87.5,91.0,81.2
+BTV Chattogram,2019,37.3,11.2,35.1
+BTV Chattogram,2020,61.3,58.8,60.4
+BTV Chattogram,2021,42.9,55.8,52.0
+BTV Chattogram,2022,73.5,66.6,51.8
+BTV Chattogram,2023,63.9,62.2,57.5
+BTV Chattogram,2024,53.8,72.7,52.4
+Barishal,2019,63.6,70.7,26.2
+Barishal,2020,39.8,73.8,1.8
+Barishal,2021,45.5,40.5,0.0
+Barishal,2022,42.3,69.3,0.0
+Barishal,2023,69.0,70.2,0.0
+Barishal,2024,52.9,42.7,0.0
+Cumilla,2020,50.7,26.7,58.7
+Cumilla,2021,30.4,31.0,21.4
+Cumilla,2022,76.0,80.2,58.5
+Cumilla,2023,66.7,70.4,50.7
+Cumilla,2024,81.7,85.8,94.1
+Darussalam,2019,65.1,68.0,49.8
+Darussalam,2020,89.2,37.7,34.8
+Darussalam,2021,38.7,45.2,43.8
+Darussalam,2022,89.2,89.1,87.0
+Darussalam,2023,91.2,93.6,93.0
+Darussalam,2024,81.0,91.3,54.2
+DoE,2023,79.7,81.5,69.9
+DoE,2024,78.6,73.0,82.8
+Gazipur,2019,54.9,33.6,46.2
+Gazipur,2020,44.9,20.9,26.5
+Gazipur,2021,83.9,67.8,69.4
+Gazipur,2022,69.8,40.0,0.0
+Gazipur,2023,79.9,34.2,0.8
+Gazipur,2024,67.8,24.9,30.4
+Khulna,2022,71.8,67.1,57.9
+Khulna,2023,75.3,49.9,89.0
+Khulna,2024,72.0,86.9,45.3
+Mymensingh,2020,49.7,53.9,53.9
+Mymensingh,2021,50.5,67.3,66.8
+Mymensingh,2022,38.3,36.2,39.0
+Mymensingh,2023,88.2,70.3,89.6
+Mymensingh,2024,85.2,58.5,90.5
+Narayanganj,2019,76.1,46.4,88.1
+Narayanganj,2020,74.6,31.8,62.1
+Narayanganj,2021,66.9,75.7,64.3
+Narayanganj,2022,63.6,42.5,13.6
+Narayanganj,2023,83.3,19.1,28.8
+Narayanganj,2024,76.7,82.5,49.1
+Narsingdi,2022,82.7,80.5,89.2
+Narsingdi,2023,79.0,82.4,90.0
+Narsingdi,2024,73.9,75.9,83.6
+Rajshahi,2022,85.7,94.8,92.3
+Rajshahi,2023,78.8,82.4,85.0
+Rajshahi,2024,83.1,77.0,88.4
+Rangpur,2022,76.7,58.5,76.0
+Rangpur,2023,78.5,55.4,90.4
+Rangpur,2024,78.9,75.0,86.4
+Savar,2020,49.0,82.6,35.3
+Savar,2021,14.1,47.3,33.4
+Savar,2022,86.1,89.2,67.5
+Savar,2023,83.6,89.5,84.8
+Savar,2024,91.2,94.3,86.7
+Sylhet,2019,70.2,87.9,85.7
+Sylhet,2020,13.8,15.4,15.3
+Sylhet,2021,32.0,9.0,34.9
+Sylhet,2022,44.4,62.9,25.4
+Sylhet,2023,51.1,87.6,18.3
+Sylhet,2024,68.4,39.4,85.8
