@@ -8,8 +8,8 @@ Data and code for the manuscript
 > submission to Urban Climate, 2026 (an earlier draft was titled "Dhaka's working week does
 > not reach the night").
 >
-> Release v2.4 is the version the manuscript describes; it has the same analysis code and
-> results as v2.3.
+> Release v2.5 is the version the manuscript describes; it has the same analysis code and
+> results as v2.3, with every figure drawn at its printed size.
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC
 University, Dhaka, Bangladesh. Correspondence: Mirza Rasheduzzaman,
@@ -81,7 +81,8 @@ python -I 11_natexp/code/run_all.py
 laptop. Rerun from a fresh copy of release v2.3, whose analysis code this release shares, 64
 of the 65 result files were byte-identical and the 65th, `robust_bootstrap_draws.csv.gz`, differed only in its gzip
 header timestamp; `make_supp_tables.py` then rewrote all 30 supplementary tables
-byte-identically.
+byte-identically, and the figure scripts of this release redrew all eight figures
+byte-identically from those results.
 `11_natexp/code/verify_claims.py` re-derives every number in
 the manuscript from `11_natexp/out/`; it needs the manuscript source, which is not part of
 this deposit until publication.
