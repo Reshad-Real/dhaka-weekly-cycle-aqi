@@ -34,10 +34,10 @@ def effects():
     units = ["night 00-05", "morning 06-11", "afternoon 12-17", "evening 18-23", "daily"]
     lines = [r"\begin{longtable}{L{1.4cm} L{1.3cm} L{1.0cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm} C{1.8cm}}",
              r"\caption{Pooled contrasts by diurnal block and shock, percent (95\% interval), and the change "
-             r"in the daily PM$_{2.5}$ AQI sub-index in index points. Friday and Saturday: against the same "
+             r"in the daily PM$_{2.5}$ AQI sub-index in index points. Friday and Saturday: Against the same "
              r"block on Sunday to Wednesday, joint-date moving-block bootstrap (14-day blocks, 400 "
-             r"replicates). Eid: against the surrounding days, with intervals from resampling the 11 usable "
-             r"events. Lockdown: against the year, month and weather expectation; first the model interval, "
+             r"replicates). Eid: Against the surrounding days, with intervals from resampling the 11 usable "
+             r"events. Lockdown: Against the year, month and weather expectation; first the model interval, "
              r"then a placebo-based sensitivity interval that adds the variance of the same design's estimates "
              r"in pseudo-lockdown windows of four other years to the model variance (a sensitivity check "
              r"with four placebo years, not a calibrated confidence interval). The night block is "
@@ -80,17 +80,17 @@ def scenarios():
     hdr = (r"\textbf{Scenario} & \textbf{PM$_{2.5}$ (\%)} & \textbf{Sub-index (points)} & "
            r"\textbf{Days $>$150} & \textbf{Days $>$200} & \textbf{Days $>$300} & \textbf{CAMS range} \\")
     lines = [r"\begin{longtable}{L{4.4cm} C{1.7cm} C{1.9cm} C{1.6cm} C{1.6cm} C{1.6cm} C{2.0cm}}",
-             r"\caption{Illustrative scenarios: concentration reductions shaped like the observed weekly "
+             r"\caption{Illustrative scenarios: Concentration reductions shaped like the observed weekly "
              r"pattern, applied to a working-day counterfactual of the US Embassy hourly record (Thursday, "
              r"Friday and Saturday hours converted to their Sunday--Wednesday equivalents; Eid, lockdown and "
              r"strike days left out), January 2019 to March 2025. Change in mean PM$_{2.5}$, in the mean daily "
              r"PM$_{2.5}$ AQI sub-index and in days per year above three category boundaries, with 95\% "
              r"intervals from the joint-date bootstrap draws of the block effects. These rescale "
              r"concentrations; they are not forecasts of a policy and not equivalent emissions cuts. "
-             r"Baseline: mean PM$_{2.5}$ " + num(b.mean_pm, 1, False) + r"\,$\mu$g\,m$^{-3}$, mean sub-index "
+             r"Baseline: Mean PM$_{2.5}$ " + num(b.mean_pm, 1, False) + r"\,$\mu$g\,m$^{-3}$, mean sub-index "
              + num(b.mean_aqi, 1, False) + r", and " + num(b.days150, 0, False) + r", " + num(b.days200, 0, False)
              + r" and " + num(b.days300, 0, False) + r" days per year above 150, 200 and 300. Last column: "
-             r"range of the sub-index change over the " + NUM[St.station.nunique()]
+             r"Range of the sub-index change over the " + NUM[St.station.nunique()]
              + r" screened Dhaka CAMS stations, 2019--2024.}\label{tab:scenarios}\\",
              r"\toprule", hdr, r"\midrule\endfirsthead", r"\toprule", hdr, r"\midrule\endhead",
              r"\bottomrule\endfoot"]
@@ -141,7 +141,7 @@ def stations():
     hdr = (r"\textbf{Station} & \textbf{Region} & \textbf{Host} & \textbf{Position} & "
            + " & ".join(r"\textbf{%d}" % y for y in years) + r" & \textbf{Used for} \\")
     lines = [r"\begin{longtable}{L{2.3cm} L{1.2cm} L{2.9cm} L{1.4cm} " + "C{0.6cm} " * 6 + r"L{2.2cm}}",
-             r"\caption{Monitoring stations: host institution, position (World Air Quality Index listing; the "
+             r"\caption{Monitoring stations: Host institution, position (World Air Quality Index listing; the "
              r"US Embassy from OpenStreetMap), valid PM$_{2.5}$ hours by year (percent of the year, after quality "
              r"control) and the analyses each enters. No siting classification of the CAMS stations is "
              r"published. Dhaka-region PM$_{2.5}$ is screened against the US Embassy reference; gas analyzers are "
@@ -191,7 +191,7 @@ def sensitivity():
     lines = [r"\begin{longtable}{L{6.0cm} C{0.6cm} C{2.6cm} C{2.6cm} C{2.6cm}}",
              r"\caption{Robustness of the Dhaka-region Friday PM$_{2.5}$ contrast, percent. Bootstrap rows: "
              r"95\% interval from 400 joint-date resamples with the block length shown. Other rows: "
-             r"random-effects pooling, $z$-statistic in parentheses. $k$: stations. The full set, with the "
+             r"Random-effects pooling, $z$-statistic in parentheses. $k$: Stations. The full set, with the "
              r"national stations and each station left out, is in Table~\ref{S-tab:s-robust}; the gases under "
              r"each screen in Table~\ref{S-tab:s-gas-screens}.}\label{tab:sensitivity}\\",
              r"\toprule", hdr, r"\midrule\endfirsthead", r"\toprule", hdr, r"\midrule\endhead", r"\bottomrule\endfoot"]

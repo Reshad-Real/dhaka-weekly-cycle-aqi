@@ -347,7 +347,7 @@ def claims(r):
     fl = r.flat[r.flat.flat]
     kept = r.flat[~r.flat.flat]
     dco = r.flat[(r.flat.station == "Darussalam") & (r.flat.pollutant == "CO")]
-    add("fault rule", "their mean hourly profiles vary by only",
+    add("fault rule", "Their mean hourly profiles vary by only",
         [("range", fl.diurnal_range.min(), fl.diurnal_range.max()), kept.diurnal_range.median(),
          fl.r_daily_pm25.min(), fl.r_daily_pm25.max(), float(dco.r_daily_pm25.iloc[0])])
     import cams_shocks
@@ -380,7 +380,7 @@ def claims(r):
     assert set(r.hours("national", "NOX", "Fri")) <= set(nat_nox_common), "national NOx band hours vary"
     add("Monte Carlo bands", "Across the Monte Carlo runs the critical",
         [*r.stab_crit(), r.stab_common_hours("Dhaka", PM)[0]])
-    add("Eid events resampled", "the main interval resamples the", [int(r.eid("event_boot", field="n_events"))])
+    add("Eid events resampled", "The main interval resamples the", [int(r.eid("event_boot", field="n_events"))])
     cams_dom = 100 * r.dom[r.dom.source.str.startswith("CAMS")].share_other_higher
     add("PM10 dominance", "exceeds it at the CAMS stations on", [("range", cams_dom.min(), cams_dom.max())])
     a0 = r.ann.iloc[0]

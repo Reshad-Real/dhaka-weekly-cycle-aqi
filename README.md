@@ -1,15 +1,15 @@
-# Partial-day activity reductions and the daily air quality index (Dhaka): data and code
+# Partial-day activity reductions and the daily air quality index (Dhaka): Data and code
 
 Data and code for the manuscript
 
 > Md. Reshad Al Muttaki, Sadia Afrin, Hasanat Fariha Noon, Alvi Ibn Amzad Anil,
 > SK Tahmed Salim Rafid and Mirza Rasheduzzaman. *Partial-day activity reductions and the
-> daily air quality index: hour-resolved PM2.5 evidence from Dhaka's weekly rest day.*
+> daily air quality index: Hour-resolved PM2.5 evidence from Dhaka's weekly rest day.*
 > Manuscript prepared for submission to Urban Climate, 2026 (earlier drafts were titled
 > "Dhaka's working week does not reach the night" and "Diurnal patterns of weekly activity
 > and PM2.5 in Dhaka").
 >
-> Release v2.6 is the version the manuscript describes; it has the same analysis code and
+> Release v2.7 is the version the manuscript describes; it has the same analysis code and
 > results as v2.3, with every figure drawn at its printed size.
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC

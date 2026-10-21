@@ -101,7 +101,7 @@ def screening():
                                 and gas_allowed(st, g, "national", gas_ok, flat)]
         rows.append([st + "$^{*}$", "--", "--", "--", "--", "--", fmt(st, "NOX"), "--", fmt(st, "CO"), ", ".join(use)])
     longtable("supp_screening.tex", "L{2.9cm} C{1.4cm} C{1.0cm} C{1.0cm} C{0.9cm} C{1.2cm} C{1.1cm} C{1.2cm} C{1.1cm} L{2.2cm}",
-              r"Station screening. Dhaka-region stations: daily PM$_{2.5}$ correlation (log) and median "
+              r"Station screening. Dhaka-region stations: Daily PM$_{2.5}$ correlation (log) and median "
               r"ratio with the US Embassy monitor; the hourly lag of best correlation with the Embassy; "
               r"the deseasonalized daily Spearman correlation of each gas analyzer with TROPOMI NO$_2$ "
               r"($\rho$); and the median 30-day coefficient of variation of daily means (CV). Inclusion: "
@@ -133,7 +133,7 @@ def station():
         rows.append([st, reg.replace("national", "National")] + cells + [n])
     longtable("supp_station.tex", "L{2.8cm} L{1.4cm}" + " C{2.0cm}" * 5 + " C{0.9cm}",
               r"Friday effect on PM$_{2.5}$ by station and diurnal block, percent against Sunday to "
-              r"Wednesday (95\% interval, Newey--West). $n$: days in the daily-mean regression.",
+              r"Wednesday (95\% interval, Newey--West). $n$: Days in the daily-mean regression.",
               "tab:s-station", ["Station", "Region"] + BLAB + ["$n$"], rows, size=r"\footnotesize")
 
 
@@ -169,10 +169,10 @@ def robust():
     longtable("supp_robust.tex", "L{3.8cm}" + " C{2.2cm}" * 5,
               r"Robustness of the pooled Friday PM$_{2.5}$ effect by diurnal block, percent. Bootstrap rows: "
               r"95\% interval from 400 joint-date moving-block resamples (14-day blocks). Other rows: "
-              r"$z$-statistic in parentheses, random-effects pooling. No station screens: every Dhaka-region "
-              r"CAMS station, adding Savar. Stricter screens: daily correlation with the Embassy of at least "
+              r"$z$-statistic in parentheses, random-effects pooling. No station screens: Every Dhaka-region "
+              r"CAMS station, adding Savar. Stricter screens: Daily correlation with the Embassy of at least "
               r"0.85 instead of 0.6 (the Embassy and four CAMS stations). Without the gap-filled months: January--June "
-              r"2024 dropped. Balanced sample: only dates on which at least 70 percent of the region's stations "
+              r"2024 dropped. Balanced sample: Only dates on which at least 70 percent of the region's stations "
               r"report. National \pmtf{} is not screened, "
               r"so these two rows are given for the Dhaka region only.", "tab:s-robust",
               ["Variant"] + BLAB, fixed, size=r"\footnotesize")
@@ -188,7 +188,7 @@ def vent():
                     ["%.0f / %.0f" % (g.loc["low", "vc_mean"], g.loc["high", "vc_mean"])])
     longtable("supp_vent.tex", "L{1.6cm} L{1.8cm} C{2.6cm} C{2.6cm} C{2.6cm} C{2.6cm}",
               r"Friday effect on PM$_{2.5}$ within each diurnal block by tercile of that block's ventilation "
-              r"coefficient, percent (95\% interval, random-effects pooling). Last column: mean ventilation "
+              r"coefficient, percent (95\% interval, random-effects pooling). Last column: Mean ventilation "
               r"coefficient (m$^2$\,s$^{-1}$) of the lowest and highest tercile.", "tab:s-vent",
               ["Region", "Block", "Low", "Middle", "High", "VC low / high"], rows, size=r"\footnotesize")
 
@@ -214,7 +214,7 @@ def mobility():
             [m(s(r[c])) for c in ("transit", "workplaces", "retail", "grocery", "residential")]
             for _, r in mo.iterrows()]
     longtable("supp_mobility.tex", "L{4.4cm} C{1.0cm}" + " C{1.8cm}" * 5,
-              r"Google Community Mobility Reports, Bangladesh, by shock: percent change against the "
+              r"Google Community Mobility Reports, Bangladesh, by shock: Percent change against the "
               r"same-weekday baseline (lockdown) or against the surrounding days (each Eid, strike days).",
               "tab:s-mobility",
               ["Shock", "Days", "Transit", "Workplaces", "Retail", "Grocery", "Residential"], rows)
@@ -263,12 +263,12 @@ def activity():
               r"TROPOMI NO$_2$ over the domain (days with at least half of the domain observed, and every "
               r"observed day), and PM$_{2.5}$, NO$_x$ and CO pooled over screened stations; percent with 95\% "
               r"interval, first treating stations as independent (Newey--West, random effects), then "
-              r"dependence-aware: the joint-date bootstrap for Friday and Saturday, the event bootstrap over the "
+              r"dependence-aware: The joint-date bootstrap for Friday and Saturday, the event bootstrap over the "
               r"11 usable events for Eid, and for the lockdown the interval widened by the spread of four "
               r"pseudo-lockdowns. TROPOMI is one series, so its weekly and strike-day intervals are Newey--West "
               r"only, as are all strike-day intervals. "
               r"Gas analyzers are not compared across years, so no gas lockdown estimate is given. Nor "
-              r"is a national PM$_{2.5}$ lockdown estimate: the design reads March--May 2020 against each "
+              r"is a national PM$_{2.5}$ lockdown estimate: The design reads March--May 2020 against each "
               r"station's own 2020 level, the national stations have no reference monitor against which a "
               r"level shift could be detected, and the two with 2020 data, both in Chattogram, show one "
               + (r"(at Agrabad, January--February PM$_{2.5}$ averaged %.1f\,$\mu$g\,m$^{-3}$ in 2019 and "
@@ -320,7 +320,7 @@ def missingness():
                     + [m(s(g.loc[h, "diff_pp"])) if h in g.index else "--"
                        for h in ("all", "night 00-05", "afternoon 12-17", "evening 18-23")])
     longtable("supp_missing.tex", "L{3.2cm} L{1.2cm} C{1.6cm} C{1.6cm} C{1.6cm} C{1.6cm} C{1.6cm}",
-              r"Missing data by day of week, 2019--2024: the share of valid hours on Sunday to Wednesday, and "
+              r"Missing data by day of week, 2019--2024: The share of valid hours on Sunday to Wednesday, and "
               r"the Friday share minus it (percentage points), for all hours and three diurnal blocks. A "
               r"Friday-specific gap in the record would show here.", "tab:s-missing",
               ["Station", "Tracer", "Valid, Sun--Wed (\\%)", "Fri $-$ Sun--Wed", "Night", "Afternoon", "Evening"],
@@ -334,7 +334,7 @@ def flatline():
         rows.append([r.station, TR.get(r.pollutant, r.pollutant), "%.3f" % r.cv30, "%.2f" % r.diurnal_range,
                      m("%+.2f" % r.r_daily_pm25), "%.3f" % r.repeat_share, "excluded" if r.flat else "kept"])
     longtable("supp_flatline.tex", "L{3.2cm} L{1.1cm} C{1.4cm} C{1.6cm} C{1.8cm} C{1.6cm} C{1.6cm}",
-              r"Fault diagnostics for every gas analyzer, 2019--2024: the median 30-day coefficient of variation "
+              r"Fault diagnostics for every gas analyzer, 2019--2024: The median 30-day coefficient of variation "
               r"of daily means (CV), the range of the mean hourly profile relative to its mean, the daily log "
               r"correlation with the co-located PM$_{2.5}$, and the share of hours equal to the previous hour. "
               r"An analyzer fails the empirical suitability screen, and is excluded, when it both barely varies "
@@ -365,7 +365,7 @@ def bh():
              r.block.split(" ")[0].capitalize(), m(s(r.pct)), m(s(r.z_boot, 2)), "%.4f" % r.p_boot, "%.4f" % r.q_boot]
             for r in F.itertuples()]
     longtable("supp_bh.tex", "L{1.5cm} L{1.4cm} L{1.1cm} L{1.6cm} C{1.3cm} C{1.3cm} C{1.4cm} C{1.4cm}",
-              r"The multiple-testing family: every pooled Friday and Saturday contrast of PM$_{2.5}$, NO$_x$ and CO, "
+              r"The multiple-testing family: Every pooled Friday and Saturday contrast of PM$_{2.5}$, NO$_x$ and CO, "
               r"in both regions, for the four diurnal blocks and the daily mean (%d tests). Each $p$-value comes "
               r"from the joint-date bootstrap ($z$ = estimate / bootstrap standard error), and $q$ is the "
               r"Benjamini--Hochberg adjustment over the whole family." % len(F), "tab:s-bh",
@@ -399,15 +399,15 @@ def eid_checks():
         rows.append([name, str(int(pmr.k)), str(int(pmr.n_events)), ci(pmr.b_pct, pmr.lo_pct, pmr.hi_pct),
                      ci(aq.b, aq.lo, aq.hi)])
     longtable("supp_eid_checks.tex", "L{6.0cm} C{0.7cm} C{1.1cm} C{3.0cm} C{3.0cm}",
-              r"Checks on the Eid estimate (daily mean, Dhaka region): percent change in PM$_{2.5}$ and change in "
+              r"Checks on the Eid estimate (daily mean, Dhaka region): Percent change in PM$_{2.5}$ and change in "
               r"the PM$_{2.5}$ AQI sub-index (points), 95\% intervals. Eid-ul-Fitr 2020 fell inside the lockdown "
-              r"and is not usable, leaving 11 events. $k$: stations.", "tab:s-eid-checks",
+              r"and is not usable, leaving 11 events. $k$: Stations.", "tab:s-eid-checks",
               ["Analysis", "$k$", "Events", "PM$_{2.5}$ (\\%)", "Sub-index (points)"], rows, size=r"\footnotesize")
 
 
 def lockdown_checks():
     L = pd.read_csv(os.path.join(OUT, "lockdown_checks.csv"))
-    lab = {"main": "Main: year and month effects", "woy": "Week-of-year harmonics instead of months",
+    lab = {"main": "Main: Year and month effects", "woy": "Week-of-year harmonics instead of months",
            "excl_later": "Without 31 May 2020 -- 31 Dec 2021", "nomet": "Without meteorology",
            "main_with_placebo_spread": "Main, interval widened by the placebo spread"}
     rows = []
@@ -434,14 +434,14 @@ def reconstruct():
               r"The daily Friday change in the equal-block mean PM$_{2.5}$ (the mean of the four block means) "
               r"reconstructed from the four block contrasts, against the change estimated directly for the same daily "
               r"outcome on the same dates, percent, and their difference (percentage points); 95\% intervals from the "
-              r"joint-date bootstrap carried through every step. Log: block and daily models fitted to log "
+              r"joint-date bootstrap carried through every step. Log: Block and daily models fitted to log "
               r"concentrations; the reconstruction divides each Friday's observed block means by $e^{\beta_b}$, a "
               r"residual-preserving multiplicative counterfactual, and the direct value $e^{\beta}-1$ is a "
               r"geometric-mean contrast that, under the same construction, is also the ratio of the Friday total to "
-              r"its counterfactual. Arithmetic: the same designs fitted by Poisson pseudo-maximum likelihood to "
+              r"its counterfactual. Arithmetic: The same designs fitted by Poisson pseudo-maximum likelihood to "
               r"concentrations, so $e^{\beta}$ is a ratio of conditional arithmetic means and the fitted Friday total "
               r"equals the observed one; block and daily models then estimate the same ratio of Friday to working-day "
-              r"totals under different mean models. Complete days: dates with all 24 hours valid, on which the "
+              r"totals under different mean models. Complete days: Dates with all 24 hours valid, on which the "
               r"equal-block mean is the mean of all hours.", "tab:s-reconstruct",
               ["Region", "Sample", "Scale", "$k$", "Fridays", "Reconstructed", "Direct", "Difference"], rows,
               size=r"\scriptsize")
@@ -457,12 +457,12 @@ def decompose():
             for r in D.itertuples()]
     longtable("supp_decompose.tex", "L{1.2cm} L{1.1cm} L{1.4cm}" + " C{1.75cm}" * 6,
               r"What makes the daily Friday change small, step by step (percent; differences in percentage "
-              r"points; 95\% joint-date bootstrap intervals). Affected: the mean of the afternoon and evening "
-              r"contrasts. Partial day: the same with the night and morning contrasts set to zero and equal weights "
-              r"for the four blocks (half the affected value). Equal weights: all four block contrasts, equal "
-              r"weights. Concentration weights: each block weighted by its share of the counterfactual Friday total "
-              r"(the reconstruction of Table~\ref{tab:s-reconstruct}). Cancellation: equal weights minus partial "
-              r"day, the effect of the night and morning contrasts. Weighting: concentration minus equal weights, the "
+              r"points; 95\% joint-date bootstrap intervals). Affected: The mean of the afternoon and evening "
+              r"contrasts. Partial day: The same with the night and morning contrasts set to zero and equal weights "
+              r"for the four blocks (half the affected value). Equal weights: All four block contrasts, equal "
+              r"weights. Concentration weights: Each block weighted by its share of the counterfactual Friday total "
+              r"(the reconstruction of Table~\ref{tab:s-reconstruct}). Cancellation: Equal weights minus partial "
+              r"day, the effect of the night and morning contrasts. Weighting: Concentration minus equal weights, the "
               r"effect of the unequal baseline concentrations of the blocks. Scales as in "
               r"Table~\ref{tab:s-reconstruct}.", "tab:s-decompose",
               ["Region", "Sample", "Scale", "Affected", "Partial day", "Equal weights", "Conc.\\ weights",
@@ -486,14 +486,14 @@ def mechanism():
         rows.append([lab.get(r.test, r.test), r.region.replace("national", "National"),
                      r.block.split(" ")[0].capitalize(), str(int(r.k)), val])
     longtable("supp_mechanism.tex", "L{7.0cm} L{1.4cm} L{1.6cm} C{0.6cm} C{3.2cm}",
-              r"Direct tests of the boundary-layer interpretation, PM$_{2.5}$. Interactions: the Friday "
+              r"Direct tests of the boundary-layer interpretation, PM$_{2.5}$. Interactions: The Friday "
               r"indicator times the station-centred log ventilation coefficient (whose main effect is in the "
               r"controls) or the centred log boundary-layer height (added with its own main effect); per doubling of "
               r"the variable, as $100\delta\ln 2$ on the log scale (approximately percentage points) and exactly on "
               r"the response scale, $100e^{\beta}(2^{\delta}-1)$ at the centred reference. A positive value means a "
               r"smaller Friday reduction in better-ventilated conditions. Interactions and the tercile difference: "
-              r"fixed-weight pooling with joint-date bootstrap intervals. Lagged-meteorology and carry-over models: "
-              r"random-effects pooling; the carry-over model is a sensitivity check, not a model of a sustained "
+              r"Fixed-weight pooling with joint-date bootstrap intervals. Lagged-meteorology and carry-over models: "
+              r"Random-effects pooling; the carry-over model is a sensitivity check, not a model of a sustained "
               r"change.", "tab:s-mechanism", ["Test", "Region", "Block", "$k$", "Estimate"], rows,
               size=r"\footnotesize")
 
@@ -529,7 +529,7 @@ def aqi_annual():
             for r in A.itertuples()]
     a = A.iloc[0]
     longtable("supp_aqi_annual.tex", "L{2.6cm} C{1.6cm} C{1.4cm} C{1.6cm} C{1.6cm} C{1.6cm} C{1.6cm}",
-              r"US Embassy daily PM$_{2.5}$ sub-index by season, January 2019 -- March 2025: calendar days, days "
+              r"US Embassy daily PM$_{2.5}$ sub-index by season, January 2019 -- March 2025: Calendar days, days "
               r"with at least 18 valid hours, their share, and the share of valid days above 150, 200 and 300. "
               r"Days per year above each threshold (share of all valid days $\times$ 365.25): %.1f, %.1f and %.1f; "
               r"with the four seasons weighted by their calendar length instead, %.1f, %.1f and %.1f. %d days "
@@ -557,9 +557,9 @@ def gas_screens():
                                for b in BLOCKS])
     longtable("supp_gas_screens.tex", "L{1.3cm} L{1.0cm} L{2.0cm} C{0.4cm}" + " C{1.9cm}" * 5,
               r"Friday NO$_x$ and CO contrasts under the main, behaviour-only, no and stricter screens, percent "
-              r"(95\% interval, stations treated as independent). Behaviour only: an analyzer is dropped when its "
+              r"(95\% interval, stations treated as independent). Behaviour only: An analyzer is dropped when its "
               r"daily means barely vary (CV below 0.15), without asking whether it co-varies with PM$_{2.5}$. No "
-              r"screens: every analyzer, including those failing the suitability screen and, in the Dhaka region, "
+              r"screens: Every analyzer, including those failing the suitability screen and, in the Dhaka region, "
               r"those that fail the TROPOMI comparison. Stricter: TROPOMI correlation of at least 0.3 in the Dhaka "
               r"region and every analyzer with a CV below 0.2 dropped, which leaves no Dhaka-region CO analyzer.",
               "tab:s-gas-screens", ["Region", "Tracer", "Screens", "$k$"] + BLAB, rows, size=r"\scriptsize")
@@ -571,7 +571,7 @@ def aqi_cap():
              str(int(r.days_above_325)), ci(r.b, r.lo, r.hi)] for r in A.itertuples()]
     longtable("supp_aqi_cap.tex", "L{1.8cm} L{3.2cm} C{0.5cm} C{1.8cm} C{1.8cm} C{3.2cm}",
               r"Sensitivity of the daily PM$_{2.5}$ sub-index effects to the treatment of days above "
-              r"325.4\,$\mu$g\,m$^{-3}$, Dhaka region: set to 500 (the main convention), or with the top breakpoint "
+              r"325.4\,$\mu$g\,m$^{-3}$, Dhaka region: Set to 500 (the main convention), or with the top breakpoint "
               r"segment (301--500 over 225.5--325.4\,$\mu$g\,m$^{-3}$) extended linearly. Station-days in each "
               r"analysis sample and those above 325.4; change in index points with 95\% interval (Newey--West, "
               r"random effects).", "tab:s-aqi-cap",
@@ -589,10 +589,10 @@ def clock():
                      "%.2f" % r.sr_centroid_h if np.isfinite(r.sr_centroid_h) else "--",
                      lag("PM25"), lag("NOX"), lag("CO")])
     longtable("supp_clock.tex", "L{3.6cm} C{1.6cm} C{1.8cm} C{2.0cm} C{2.0cm} C{2.0cm}",
-              r"Station clocks, 2019--2024. Solar radiation: hours with a value, and the radiation-weighted mean "
-              r"hour of the day (local, hour-beginning; not given below 5,000 hours). Lags: for the Dhaka-region "
+              r"Station clocks, 2019--2024. Solar radiation: Hours with a value, and the radiation-weighted mean "
+              r"hour of the day (local, hour-beginning; not given below 5,000 hours). Lags: For the Dhaka-region "
               r"stations, the hourly lag at which the within-day log anomalies of each pollutant correlate best "
-              r"with those at Darussalam (positive: the station follows Darussalam), with that correlation. A "
+              r"with those at Darussalam (positive: The station follows Darussalam), with that correlation. A "
               r"clock offset would move every instrument at a station together.", "tab:s-clock",
               ["Station", "Radiation hours", "Radiation centre (h)", "Lag PM$_{2.5}$", "Lag NO$_x$", "Lag CO"],
               rows, size=r"\footnotesize")
@@ -603,13 +603,19 @@ def strikes():
     rows = [[r.calendar, r.outcome.replace("NOX", "NO$_x$").replace("PM25", "PM$_{2.5}$").replace("NO2", "NO$_2$"),
              str(int(r.n_days)), ci(r.pct, r.lo, r.hi)] for r in T.itertuples()]
     longtable("supp_strike_local.tex", "L{3.6cm} L{4.0cm} C{1.4cm} C{3.2cm}",
-              r"Strike days: all qualifying dates in Dhaka division, and only the dates with an event in Dhaka "
+              r"Strike days: All qualifying dates in Dhaka division, and only the dates with an event in Dhaka "
               r"district itself; percent change in the daily mean with 95\% interval.", "tab:s-strikes",
               ["Calendar", "Outcome", "Days", "Change (\\%)"], rows, size=r"\footnotesize")
 
 
 RUNLAB = {"published": "Published", "B2000": "2,000 resamples", "seed2": "Seed 2", "seed3": "Seed 3",
           "seed4": "Seed 4", "seed5": "Seed 5"}
+
+
+def seed_list(seeds):
+    """'Published 20261016; 2,000 resamples 20261030; ...' (capitalized after the colon)."""
+    t = "; ".join("%s %d" % (RUNLAB[k].lower(), v) for k, v in seeds.items())
+    return t[0].upper() + t[1:]
 
 
 def hour_runs(hours):
@@ -643,7 +649,7 @@ def stability_weekly():
               r"400 resamples (which reproduce the published values), with 2,000 resamples, and with four further "
               r"seeds of 400. Every resample gave a pooled estimate. Each $q$-value uses the run's $p$-values for "
               r"the ten Friday PM$_{2.5}$ tests and the published ones for the other 50 tests of the family. "
-              r"Seeds: " + "; ".join("%s %d" % (RUNLAB[k].lower(), v) for k, v in seeds.items()) + ".",
+              r"Seeds: " + seed_list(seeds) + ".",
               "tab:s-stability-weekly",
               ["Region", "Run", "$B$", "Afternoon", "$q$", "Evening", "$q$", "Daily", "$q$"], rows,
               size=r"\scriptsize\setlength{\tabcolsep}{3pt}")
@@ -666,10 +672,10 @@ def stability_hourly():
     seeds = T.groupby("run", sort=False).seed.first()
     longtable("supp_stability_hourly.tex", "L{2.6cm} L{2.4cm} C{0.9cm} L{2.0cm} L{3.6cm} L{2.0cm}",
               r"Monte Carlo stability of the simultaneous 95\% bands for the 72-hour curves (Thursday 00~h to "
-              r"Saturday 23~h): the critical value $c$ and the clock hours at which the band excludes zero, for the "
+              r"Saturday 23~h): The critical value $c$ and the clock hours at which the band excludes zero, for the "
               r"published seed and 400 resamples (which reproduce the published bands), 2,000 resamples, and four "
               r"further seeds of 400. Every resample gave a pooled estimate at every hour. Seeds: "
-              + "; ".join("%s %d" % (RUNLAB[k].lower(), v) for k, v in seeds.items()) + ".",
+              + seed_list(seeds) + ".",
               "tab:s-stability-hourly", ["Curve", "Run", "$c$", "Thursday", "Friday", "Saturday"], rows,
               size=r"\scriptsize")
 
