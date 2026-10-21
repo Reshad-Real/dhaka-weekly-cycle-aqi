@@ -1,14 +1,15 @@
-# Diurnal patterns of weekly activity and PM2.5 in Dhaka: data and code
+# Partial-day activity reductions and the daily air quality index (Dhaka): data and code
 
 Data and code for the manuscript
 
 > Md. Reshad Al Muttaki, Sadia Afrin, Hasanat Fariha Noon, Alvi Ibn Amzad Anil,
-> SK Tahmed Salim Rafid and Mirza Rasheduzzaman. *Diurnal patterns of weekly activity and
-> PM2.5 in Dhaka: implications for the daily air quality index.* Manuscript prepared for
-> submission to Urban Climate, 2026 (an earlier draft was titled "Dhaka's working week does
-> not reach the night").
+> SK Tahmed Salim Rafid and Mirza Rasheduzzaman. *Partial-day activity reductions and the
+> daily air quality index: hour-resolved PM2.5 evidence from Dhaka's weekly rest day.*
+> Manuscript prepared for submission to Urban Climate, 2026 (earlier drafts were titled
+> "Dhaka's working week does not reach the night" and "Diurnal patterns of weekly activity
+> and PM2.5 in Dhaka").
 >
-> Release v2.5 is the version the manuscript describes; it has the same analysis code and
+> Release v2.6 is the version the manuscript describes; it has the same analysis code and
 > results as v2.3, with every figure drawn at its printed size.
 
 Department of Electrical and Electronic Engineering, BSRM School of Engineering, BRAC
@@ -26,7 +27,7 @@ The folders mirror the project's own layout, so every script runs from a clone u
 | `11_natexp/data/cams_hourly_qc.csv.gz` | The same after the documented quality control (`cams_qc.py`). |
 | `11_natexp/data/station_locations.csv` | Station hosts and positions from the World Air Quality Index listing; the US Embassy from OpenStreetMap Nominatim. |
 | `11_natexp/out/` | Every result file (CSV, JSON, the bootstrap draws as CSV.GZ) and figure (PNG) the manuscript and supplement draw on. |
-| `11_natexp/paper/tables/supp_*.tex` | Every supplementary table, as written by `make_supp_tables.py` from the result files. |
+| `11_natexp/paper/working/tables/supp_*.tex` | Every supplementary table, as written by `make_supp_tables.py` from the result files. |
 | `02_data/raw/meteo_dhaka_hourly_filled.csv` | ERA5 hourly meteorology requested at 23.8103 N, 90.4125 E from the Open-Meteo archive API (`models=era5`, `timezone=Asia/Dhaka`, retrieved 17 October 2026), which returns the nearest 0.25 degree ERA5 cell (23.75 N, 90.50 E) without interpolation; local time, with the 4,368 gap-filled boundary-layer hours flagged in `blh_filled`. |
 | `02_data/raw/meteo_dhaka_hourly.csv` | The same ERA5 download before the gap fill (the boundary-layer gap is empty here); used for the gap-fill error analysis. |
 | `02_data/gapfill.py`, `06_results/metrics/blh_gapfill_cv.csv` | The boundary-layer gap fill and its blocked cross-validation (8 held-out 181-day blocks). |

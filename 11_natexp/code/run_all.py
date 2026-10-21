@@ -2,7 +2,7 @@
 
 Parsing (parse_cams.py) is slow and changes only when CAMS-BD does, so it is skipped unless
 --parse is given.  Independent analyses in the middle run in parallel.  Stops at the first
-failure.  The paper itself is built afterwards by paper/build.py, which also verifies
+failure.  The paper itself is built afterwards by paper/working/build.py, which also verifies
 every number in the text.
 
 Usage (from 11_natexp):  python -I code/run_all.py [--parse]
@@ -69,7 +69,7 @@ def main():
             if failed:
                 print("stopping: see out/run_all.log")
                 return 1
-    print("all analyses done; now run paper/build.py")
+    print("all analyses done; now run paper/working/build.py")
     return 0
 
 

@@ -20,7 +20,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "out")
-TAB = os.path.join(HERE, "..", "paper", "tables")
+TAB = os.path.join(HERE, "..", "paper", "working", "tables")
 os.makedirs(TAB, exist_ok=True)
 BLOCKS = ["night 00-05", "morning 06-11", "afternoon 12-17", "evening 18-23", "daily"]
 BLAB = ["Night", "Morning", "Afternoon", "Evening", "Daily"]

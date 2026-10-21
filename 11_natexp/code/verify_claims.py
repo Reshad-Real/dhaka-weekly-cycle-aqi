@@ -1,4 +1,4 @@
-"""Re-derive every amber number (\\pn{...}) in paper/manuscript.tex from 11_natexp/out and
+"""Re-derive every amber number (\\pn{...}) in paper/working/manuscript.tex from 11_natexp/out and
 report any mismatch, and any amber number no claim accounts for.
 
 How it works
@@ -30,7 +30,9 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "out")
-TEX = os.environ.get("VERIFY_TEX", os.path.join(HERE, "..", "paper", "manuscript.tex"))
+TEX = os.environ.get("VERIFY_TEX", os.path.join(HERE, "..", "paper", "working", "manuscript.tex"))
+# the highlights are a file for the journal and live with the others in paper/submission
+HIGHLIGHTS = os.path.join(HERE, "..", "paper", "submission", "highlights.txt")
 ROOT = os.path.join(HERE, "..", "..")
 
 PN = re.compile(r"\\pn\{((?:[^{}]|\{[^{}]*\})*)\}")
@@ -811,7 +813,7 @@ def main():
                 if new is not None:
                     fixes.append((pos, raw, new, line, name))
     # the highlights file carries no \pn{} marks: check its numbers line by line
-    hl_path = os.path.join(os.path.dirname(TEX), "highlights.txt")
+    hl_path = HIGHLIGHTS
     if os.path.exists(hl_path):
         want = highlight_values(r)
         lines = open(hl_path, encoding="utf-8").read().splitlines()

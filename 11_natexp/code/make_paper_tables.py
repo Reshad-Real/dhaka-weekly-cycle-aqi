@@ -1,12 +1,12 @@
 """Write the data-bearing manuscript tables as LaTeX, straight from the result files, so no
 number in them is transcribed by hand.
 
-  paper/tables/tab_effects.tex     Table 3, from out/table3.csv
-  paper/tables/tab_scenarios.tex   Table 6, from out/aqi_scenarios.csv and
+  paper/working/tables/tab_effects.tex     Table 3, from out/table3.csv
+  paper/working/tables/tab_scenarios.tex   Table 6, from out/aqi_scenarios.csv and
                                    out/aqi_scenarios_stations.csv
-  paper/tables/tab_stations.tex    Table 2, stations and PM2.5 coverage by year
-  paper/tables/tab_sensitivity.tex Table 5, robustness of the Dhaka Friday contrast
-  paper/tables/tab_screening.tex   Table S2, from out/cams_validation.csv
+  paper/working/tables/tab_stations.tex    Table 2, stations and PM2.5 coverage by year
+  paper/working/tables/tab_sensitivity.tex Table 5, robustness of the Dhaka Friday contrast
+  paper/working/tables/tab_screening.tex   Table S2, from out/cams_validation.csv
 Usage: python -I make_paper_tables.py
 """
 import os
@@ -15,7 +15,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "out")
-TAB = os.path.join(HERE, "..", "paper", "tables")
+TAB = os.path.join(HERE, "..", "paper", "working", "tables")
 NUM = {3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 os.makedirs(TAB, exist_ok=True)
 
