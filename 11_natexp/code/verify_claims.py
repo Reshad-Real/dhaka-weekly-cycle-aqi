@@ -394,7 +394,7 @@ def claims(r):
     st_t = r.mobility("strike", "transit").iloc[0]
     st_w = r.mobility("strike", "workplaces").iloc[0]
     st_n = int(r.mobility("strike", "n_days").iloc[0])
-    add("mobility and NO2 for Eid and lockdown (text)", "The lockdown lowered national mobility",
+    add("mobility and NO2 for Eid and lockdown (text)", "During the\nlockdown, national mobility was",
         [A(lock_t), A(lock_w), lock_r, A(eid_w.mean()), A(eid_w.max()), A(eid_w.min()), eid_t.mean(),
          A(r.activity("Eid", "TROPOMI NO2", "domain")), A(r.activity("Lockdown", "TROPOMI NO2", "domain"))])
     sd = r.strike[r.strike.calendar == "Dhaka district only"].set_index("outcome")
@@ -592,7 +592,7 @@ def claims(r):
          A(r.tracer_ev("Eid", "TROPOMI NO2", "domain", "b_pct")), A(r.tracer_ev("Eid", "NOX", "Dhaka", "b_pct")),
          A(r.tracer_ev("Eid", "PM25", "national", "b_pct"))])
     lh = r.event_hours("Lockdown")
-    add("lockdown (text)", "The lockdown lowered pooled \\pmtf{} by",
+    add("lockdown (text)", "During the lockdown, pooled \\pmtf{} was",
         [A(r.lk("main")), r.lk("main", field="lo_pct"), r.lk("main", field="hi_pct"), A(lh.max()), A(lh.min()),
          r.lk("placebo_2019"), r.lk("placebo_2022"), r.lk("placebo_2023"), r.lk("placebo_2024"),
          r.lk("main_with_placebo_spread", field="lo_pct"), r.lk("main_with_placebo_spread", field="hi_pct"),
@@ -641,7 +641,7 @@ def claims(r):
     tr4 = [r.boot("national", t, b) for t in ("NOX", "CO") for b in (AFT, EVE)]
     add("discussion tracers over the day", "pooled nationally, fall by",
         [A(r.boot("national", "NOX", DAY)), A(r.boot("national", "CO", DAY)), A(max(tr4)), A(min(tr4))])
-    add("discussion Eid", "traffic, lowered daily \\pmtf{} at the Dhaka-region monitors by", [A(r.eid("main"))])
+    add("discussion Eid", "traffic, daily \\pmtf{} at the Dhaka-region monitors was", [A(r.eid("main"))])
     add("transferability", "the national daily mean falls more (",
         [A(r.boot("national", PM, DAY)), A(r.boot("Dhaka", PM, DAY))])
     add("limitations I2", "effects for the whole-city shocks are heterogeneous",
@@ -650,9 +650,9 @@ def claims(r):
     # ---------------------------------------------------------------- conclusions
     add("conclusions 1", "and \\pmtf{} from midday, by",
         [A(r.boot("Dhaka", PM, AFT)), A(r.boot("Dhaka", PM, EVE)), A(r.boot("national", PM, EVE))])
-    add("conclusions 2", "In Dhaka the daily mean changes by",
-        [A(r.boot("Dhaka", PM, DAY)), A(r.bootaqi("Dhaka", "Fri"))])
-    add("conclusions 3", "around the clock, lowered daily \\pmtf{} by",
+    add("conclusions 2", "In Dhaka, the estimated daily \\pmtf{} contrast is",
+        tri_boot("Dhaka", PM, DAY) + [r.bootaqi("Dhaka", "Fri", f) for f in ("b_point", "lo_b", "hi_b")])
+    add("conclusions 3", "around the clock, were associated with",
         [A(r.eid("main")), A(r.eid("main", "AQI"))])
     return C
 
